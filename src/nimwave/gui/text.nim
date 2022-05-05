@@ -218,9 +218,6 @@ const
         glyphIndex += 1
     t
 
-  bgColor* = glm.vec4(0f/255f, 16f/255f, 64f/255f, 0.95f)
-  textColor* = glm.vec4(230f/255f, 235f/255f, 1f, 1f)
-
   # dark colors
   blackColor* = glm.vec4(0f, 0f, 0f, 1f)
   redColor* = glm.vec4(1f, 0f, 0f, 1f)
