@@ -6,7 +6,6 @@ from math import nil
 import tables
 from strutils import format
 import unicode
-from ./colors import nil
 from illwave as iw import nil
 from terminal import nil
 
@@ -242,25 +241,25 @@ proc fgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
     of iw.SimpleColor:
       if terminal.styleBright in ch.style:
         case ch.fg.simpleColor:
-        of terminal.fgBlack: colors.blackColor
-        of terminal.fgRed: colors.brightRedColor
-        of terminal.fgGreen: colors.brightGreenColor
-        of terminal.fgYellow: colors.brightYellowColor
-        of terminal.fgBlue: colors.brightBlueColor
-        of terminal.fgMagenta: colors.brightMagentaColor
-        of terminal.fgCyan: colors.brightCyanColor
-        of terminal.fgWhite: colors.whiteColor
+        of terminal.fgBlack: blackColor
+        of terminal.fgRed: brightRedColor
+        of terminal.fgGreen: brightGreenColor
+        of terminal.fgYellow: brightYellowColor
+        of terminal.fgBlue: brightBlueColor
+        of terminal.fgMagenta: brightMagentaColor
+        of terminal.fgCyan: brightCyanColor
+        of terminal.fgWhite: whiteColor
         of terminal.fgDefault, terminal.fg8Bit: defaultColor
       else:
         case ch.fg.simpleColor:
-        of terminal.fgBlack: colors.blackColor
-        of terminal.fgRed: colors.redColor
-        of terminal.fgGreen: colors.greenColor
-        of terminal.fgYellow: colors.yellowColor
-        of terminal.fgBlue: colors.blueColor
-        of terminal.fgMagenta: colors.magentaColor
-        of terminal.fgCyan: colors.cyanColor
-        of terminal.fgWhite: colors.whiteColor
+        of terminal.fgBlack: blackColor
+        of terminal.fgRed: redColor
+        of terminal.fgGreen: greenColor
+        of terminal.fgYellow: yellowColor
+        of terminal.fgBlue: blueColor
+        of terminal.fgMagenta: magentaColor
+        of terminal.fgCyan: cyanColor
+        of terminal.fgWhite: whiteColor
         of terminal.fgDefault, terminal.fg8Bit: defaultColor
     of iw.TrueColor:
       let (r, g, b) = iw.fromColor(ch.fg.trueColor)
@@ -274,25 +273,25 @@ proc bgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
     of iw.SimpleColor:
       if terminal.styleBright in ch.style:
         case ch.bg.simpleColor:
-        of terminal.bgBlack: colors.blackColor
-        of terminal.bgRed: colors.brightRedColor
-        of terminal.bgGreen: colors.brightGreenColor
-        of terminal.bgYellow: colors.brightYellowColor
-        of terminal.bgBlue: colors.brightBlueColor
-        of terminal.bgMagenta: colors.brightMagentaColor
-        of terminal.bgCyan: colors.brightCyanColor
-        of terminal.bgWhite: colors.whiteColor
+        of terminal.bgBlack: blackColor
+        of terminal.bgRed: brightRedColor
+        of terminal.bgGreen: brightGreenColor
+        of terminal.bgYellow: brightYellowColor
+        of terminal.bgBlue: brightBlueColor
+        of terminal.bgMagenta: brightMagentaColor
+        of terminal.bgCyan: brightCyanColor
+        of terminal.bgWhite: whiteColor
         of terminal.bgDefault, terminal.bg8Bit: defaultColor
       else:
         case ch.bg.simpleColor:
-        of terminal.bgBlack: colors.blackColor
-        of terminal.bgRed: colors.redColor
-        of terminal.bgGreen: colors.greenColor
-        of terminal.bgYellow: colors.yellowColor
-        of terminal.bgBlue: colors.blueColor
-        of terminal.bgMagenta: colors.magentaColor
-        of terminal.bgCyan: colors.cyanColor
-        of terminal.bgWhite: colors.whiteColor
+        of terminal.bgBlack: blackColor
+        of terminal.bgRed: redColor
+        of terminal.bgGreen: greenColor
+        of terminal.bgYellow: yellowColor
+        of terminal.bgBlue: blueColor
+        of terminal.bgMagenta: magentaColor
+        of terminal.bgCyan: cyanColor
+        of terminal.bgWhite: whiteColor
         of terminal.bgDefault, terminal.bg8Bit: defaultColor
     of iw.TrueColor:
       let (r, g, b) = iw.fromColor(ch.bg.trueColor)
