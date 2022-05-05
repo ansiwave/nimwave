@@ -28,11 +28,11 @@ const
      GLFWKey.F: iw.Key.CtrlF,
      GLFWKey.G: iw.Key.CtrlG,
      GLFWKey.H: iw.Key.CtrlH,
-     # Ctrl-I is Tab
+     GLFWKey.I: iw.Key.Tab,
      GLFWKey.J: iw.Key.CtrlJ,
      GLFWKey.K: iw.Key.CtrlK,
      GLFWKey.L: iw.Key.CtrlL,
-     # Ctrl-M is Enter
+     GLFWKey.M: iw.Key.Enter,
      GLFWKey.N: iw.Key.CtrlN,
      GLFWKey.O: iw.Key.CtrlO,
      GLFWKey.P: iw.Key.CtrlP,
