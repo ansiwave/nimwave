@@ -31,7 +31,9 @@ proc nimwave_set_display(selector: cstring, display: cstring) {.importc.}
 proc nimwave_focus(selector: cstring) {.importc.}
 proc nimwave_scroll_down(selector: cstring) {.importc.}
 proc nimwave_get_scroll_top(selector: cstring): cint {.importc.}
-proc nimwave_get_cursor_line(selector: cstring): cint {.importc.}
+proc nimwave_open_new_tab(url: cstring) {.importc.}
+proc nimwave_get_hash(): cstring {.importc.}
+proc nimwave_set_hash(hash: cstring) {.importc.}
 proc free(p: pointer) {.importc.}
 
 {.compile: "nimwave_emscripten.c".}
@@ -68,6 +70,13 @@ proc scrollDown*(selector: string) =
 proc getScrollTop*(selector: string): int =
   nimwave_get_scroll_top(selector)
 
-proc getCursorLine*(selector: string): int =
-  nimwave_get_cursor_line(selector)
+proc openNewTab*(url: string) =
+  nimwave_open_new_tab(url)
 
+proc getHash*(): string =
+  let hash = nimwave_get_hash()
+  result = $hash
+  free(hash)
+
+proc setHash*(hash: string) =
+  nimwave_set_hash(hash)

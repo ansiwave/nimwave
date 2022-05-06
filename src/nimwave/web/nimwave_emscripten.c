@@ -65,40 +65,18 @@ EM_JS(int, nimwave_get_scroll_top, (const char* selector), {
   return elem.scrollTop;
 });
 
-EM_JS(int, nimwave_get_cursor_line, (const char* selector), {
-  var elem = document.querySelector(UTF8ToString(selector));
-  if (!elem) return;
+EM_JS(void, nimwave_open_new_tab, (const char* url), {
+  window.open(UTF8ToString(url), "_blank");
+});
 
-  function uuidv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  }
+EM_JS(char*, nimwave_get_hash, (), {
+  var hash = window.location.hash.slice(1);
+  var lengthBytes = lengthBytesUTF8(hash)+1;
+  var stringOnWasmHeap = _malloc(lengthBytes);
+  stringToUTF8(hash, stringOnWasmHeap, lengthBytes);
+  return stringOnWasmHeap;
+});
 
-  var selection = document.getSelection();
-  if (selection.rangeCount < 1) {
-    return -1;
-  }
-  var range = selection.getRangeAt(0);
-  range.collapse(true);
-  var span = document.createElement('span');
-  var id = uuidv4();
-  span.appendChild(document.createTextNode(id));
-  range.insertNode(span);
-
-  var text = elem.innerText;
-  var newLines = 0;
-  var lastNewline = null;
-  for (var i = 0; i < text.length; i++) {
-    if (text[i] == '\n' && lastNewline != i - 1) {
-      newLines += 1;
-      lastNewline = i;
-    } else {
-      if (text.substring(i).startsWith(id)) break;
-    }
-  }
-
-  span.remove();
-  return newLines;
+EM_JS(void, nimwave_set_hash, (const char* hash), {
+  window.location.hash = UTF8ToString(hash);
 });
