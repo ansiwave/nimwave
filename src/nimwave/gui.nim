@@ -4,15 +4,13 @@ from paranim/gl/entities import crop, color
 import paratext, paratext/gl/text
 from math import nil
 import tables
-from strutils import format
 import unicode
 from illwave as iw import nil
 from terminal import nil
 
 const
-  version = "330"
-  instancedTextVertexShader = staticRead("gui/shaders/vertex.glsl").format(version)
-  instancedTextFragmentShader = staticRead("gui/shaders/fragment.glsl").format(version)
+  instancedTextVertexShader = staticRead("gui/shaders/vertex.glsl")
+  instancedTextFragmentShader = staticRead("gui/shaders/fragment.glsl")
   charRanges* = [
     (32'i32, 331'i32),
     (333'i32, 340'i32),

@@ -1,4 +1,4 @@
-#version $1
+#version 330
 uniform mat3 u_matrix;
 uniform int u_char_counts[1000];
 uniform int u_start_line;
