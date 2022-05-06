@@ -1,6 +1,6 @@
 #include <emscripten.h>
 
-EM_JS(char*, ansiweb_get_innerhtml, (const char* selector), {
+EM_JS(char*, nimwave_get_innerhtml, (const char* selector), {
   var elem = document.querySelector(UTF8ToString(selector));
   var content = "";
   if (elem) {
@@ -12,60 +12,60 @@ EM_JS(char*, ansiweb_get_innerhtml, (const char* selector), {
   return stringOnWasmHeap;
 });
 
-EM_JS(void, ansiweb_set_innerhtml, (const char* selector, const char* html), {
+EM_JS(void, nimwave_set_innerhtml, (const char* selector, const char* html), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
   elem.innerHTML = UTF8ToString(html);
 });
 
-EM_JS(void, ansiweb_set_location, (const char* selector, int left, int top), {
+EM_JS(void, nimwave_set_location, (const char* selector, int left, int top), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
   elem.style.left = left + "px";
   elem.style.top = top + "px";
 });
 
-EM_JS(void, ansiweb_set_size, (const char* selector, int width, int height), {
+EM_JS(void, nimwave_set_size, (const char* selector, int width, int height), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
   elem.style.width = width + "px";
   elem.style.height = height + "px";
 });
 
-EM_JS(int, ansiweb_get_client_width, (), {
+EM_JS(int, nimwave_get_client_width, (), {
   return document.documentElement.clientWidth;
 });
 
-EM_JS(int, ansiweb_get_client_height, (), {
+EM_JS(int, nimwave_get_client_height, (), {
   return document.documentElement.clientHeight;
 });
 
-EM_JS(void, ansiweb_set_display, (const char* selector, const char* display), {
+EM_JS(void, nimwave_set_display, (const char* selector, const char* display), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
   elem.style.display = UTF8ToString(display);
 });
 
-EM_JS(void, ansiweb_focus, (const char* selector), {
+EM_JS(void, nimwave_focus, (const char* selector), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
   elem.focus();
 });
 
-EM_JS(void, ansiweb_scroll_down, (const char* selector), {
+EM_JS(void, nimwave_scroll_down, (const char* selector), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (elem) {
     elem.scrollTop = elem.scrollHeight;
   }
 });
 
-EM_JS(int, ansiweb_get_scroll_top, (const char* selector), {
+EM_JS(int, nimwave_get_scroll_top, (const char* selector), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return 0;
   return elem.scrollTop;
 });
 
-EM_JS(int, ansiweb_get_cursor_line, (const char* selector), {
+EM_JS(int, nimwave_get_cursor_line, (const char* selector), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
 
