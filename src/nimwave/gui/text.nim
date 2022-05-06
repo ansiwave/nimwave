@@ -300,7 +300,7 @@ proc bgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
     result[3] = 0.7
 
 type
-  AnsiwaveTextEntityUniforms = tuple[
+  NimwaveTextEntityUniforms = tuple[
     u_matrix: Uniform[Mat3x3[GLfloat]],
     u_image: Uniform[Texture[GLubyte]],
     u_char_counts: Uniform[seq[GLint]],
@@ -310,17 +310,17 @@ type
     u_alpha: Uniform[GLfloat],
     u_show_blocks: Uniform[GLuint],
   ]
-  AnsiwaveTextEntityAttributes = tuple[
+  NimwaveTextEntityAttributes = tuple[
     a_position: Attribute[GLfloat],
     a_translate_matrix: Attribute[GLfloat],
     a_scale_matrix: Attribute[GLfloat],
     a_texture_matrix: Attribute[GLfloat],
     a_color: Attribute[GLfloat],
   ]
-  AnsiwaveTextEntity* = object of InstancedEntity[AnsiwaveTextEntityUniforms, AnsiwaveTextEntityAttributes]
-  UncompiledAnsiwaveTextEntity = object of UncompiledEntity[AnsiwaveTextEntity, AnsiwaveTextEntityUniforms, AnsiwaveTextEntityAttributes]
+  NimwaveTextEntity* = object of InstancedEntity[NimwaveTextEntityUniforms, NimwaveTextEntityAttributes]
+  UncompiledNimwaveTextEntity = object of UncompiledEntity[NimwaveTextEntity, NimwaveTextEntityUniforms, NimwaveTextEntityAttributes]
 
-proc initInstancedEntity*(entity: UncompiledTextEntity, font: PackedFont): UncompiledAnsiwaveTextEntity =
+proc initInstancedEntity*(entity: UncompiledTextEntity, font: PackedFont): UncompiledNimwaveTextEntity =
   let e = gl.copy(entity) # make a copy to prevent unexpected problems if `entity` is changed later
   result.vertexSource = instancedTextVertexShader
   result.fragmentSource = instancedTextFragmentShader
@@ -395,21 +395,21 @@ proc cropInstanceUni[T](uni: var Uniform[seq[T]], i: int, j: int) =
   uni.data = uni.data[i ..< j]
   uni.disable = false
 
-proc add*(instancedEntity: var UncompiledAnsiwaveTextEntity, entity: UncompiledTextEntity) =
+proc add*(instancedEntity: var UncompiledNimwaveTextEntity, entity: UncompiledTextEntity) =
   addInstanceAttr(instancedEntity.attributes.a_translate_matrix, entity.uniforms.u_translate_matrix)
   addInstanceAttr(instancedEntity.attributes.a_scale_matrix, entity.uniforms.u_scale_matrix)
   addInstanceAttr(instancedEntity.attributes.a_texture_matrix, entity.uniforms.u_texture_matrix)
   addInstanceAttr(instancedEntity.attributes.a_color, entity.uniforms.u_color)
   # instanceCount will be computed by the `compile` proc
 
-proc add*(instancedEntity: var AnsiwaveTextEntity, entity: UncompiledTextEntity) =
+proc add*(instancedEntity: var NimwaveTextEntity, entity: UncompiledTextEntity) =
   addInstanceAttr(instancedEntity.attributes.a_translate_matrix, entity.uniforms.u_translate_matrix)
   addInstanceAttr(instancedEntity.attributes.a_scale_matrix, entity.uniforms.u_scale_matrix)
   addInstanceAttr(instancedEntity.attributes.a_texture_matrix, entity.uniforms.u_texture_matrix)
   addInstanceAttr(instancedEntity.attributes.a_color, entity.uniforms.u_color)
   instancedEntity.instanceCount += 1
 
-proc add*(instancedEntity: var AnsiwaveTextEntity, entity: AnsiwaveTextEntity) =
+proc add*(instancedEntity: var NimwaveTextEntity, entity: NimwaveTextEntity) =
   addInstanceAttr(instancedEntity.attributes.a_translate_matrix, entity.attributes.a_translate_matrix)
   addInstanceAttr(instancedEntity.attributes.a_scale_matrix, entity.attributes.a_scale_matrix)
   addInstanceAttr(instancedEntity.attributes.a_texture_matrix, entity.attributes.a_texture_matrix)
@@ -417,7 +417,7 @@ proc add*(instancedEntity: var AnsiwaveTextEntity, entity: AnsiwaveTextEntity) =
   addInstanceUni(instancedEntity.uniforms.u_char_counts, entity.uniforms.u_char_counts)
   instancedEntity.instanceCount += entity.instanceCount
 
-proc `[]`*(instancedEntity: AnsiwaveTextEntity or UncompiledAnsiwaveTextEntity, i: int): UncompiledTextEntity =
+proc `[]`*(instancedEntity: NimwaveTextEntity or UncompiledNimwaveTextEntity, i: int): UncompiledTextEntity =
   result.attributes.a_position = instancedEntity.attributes.a_position
   result.attributes.a_position.disable = false
   result.uniforms.u_image = instancedEntity.uniforms.u_image
@@ -427,19 +427,19 @@ proc `[]`*(instancedEntity: AnsiwaveTextEntity or UncompiledAnsiwaveTextEntity, 
   getInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, result.uniforms.u_texture_matrix)
   getInstanceAttr(instancedEntity.attributes.a_color, i, result.uniforms.u_color)
 
-proc `[]=`*(instancedEntity: var AnsiwaveTextEntity, i: int, entity: UncompiledTextEntity) =
+proc `[]=`*(instancedEntity: var NimwaveTextEntity, i: int, entity: UncompiledTextEntity) =
   setInstanceAttr(instancedEntity.attributes.a_translate_matrix, i, entity.uniforms.u_translate_matrix)
   setInstanceAttr(instancedEntity.attributes.a_scale_matrix, i, entity.uniforms.u_scale_matrix)
   setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
   setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
 
-proc `[]=`*(instancedEntity: var UncompiledAnsiwaveTextEntity, i: int, entity: UncompiledTextEntity) =
+proc `[]=`*(instancedEntity: var UncompiledNimwaveTextEntity, i: int, entity: UncompiledTextEntity) =
   setInstanceAttr(instancedEntity.attributes.a_translate_matrix, i, entity.uniforms.u_translate_matrix)
   setInstanceAttr(instancedEntity.attributes.a_scale_matrix, i, entity.uniforms.u_scale_matrix)
   setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
   setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
 
-proc cropLines*(instancedEntity: var AnsiwaveTextEntity, startLine: int, endLine: int) =
+proc cropLines*(instancedEntity: var NimwaveTextEntity, startLine: int, endLine: int) =
   let
     # startLine and endLine could be temporarily too big if LineCount hasn't been updated yet
     startLine = min(startLine, instancedEntity.uniforms.u_char_counts.data.len)
@@ -455,10 +455,10 @@ proc cropLines*(instancedEntity: var AnsiwaveTextEntity, startLine: int, endLine
   cropInstanceUni(instancedEntity.uniforms.u_char_counts, startLine, endLine)
   instancedEntity.instanceCount = int32(j - i)
 
-proc cropLines*(instancedEntity: var AnsiwaveTextEntity, startLine: int) =
+proc cropLines*(instancedEntity: var NimwaveTextEntity, startLine: int) =
   cropLines(instancedEntity, startLine, instancedEntity.uniforms.u_char_counts.data.len)
 
-proc add*(instancedEntity: var AnsiwaveTextEntity, entity: UncompiledTextEntity, font: PackedFont, codepointToGlyph: Table[int32, int32], fontColor: glm.Vec4[GLfloat], text: seq[iw.TerminalChar], startPos: float): float =
+proc add*(instancedEntity: var NimwaveTextEntity, entity: UncompiledTextEntity, font: PackedFont, codepointToGlyph: Table[int32, int32], fontColor: glm.Vec4[GLfloat], text: seq[iw.TerminalChar], startPos: float): float =
   let lineNum = instancedEntity.uniforms.u_char_counts.data.len - 1
   result = startPos
   var i = 0
@@ -487,12 +487,12 @@ proc add*(instancedEntity: var AnsiwaveTextEntity, entity: UncompiledTextEntity,
     instancedEntity.uniforms.u_char_counts.data[lineNum] += 1
     result += bakedChar.xadvance
 
-proc addLine*(instancedEntity: var AnsiwaveTextEntity, entity: UncompiledTextEntity, font: PackedFont, codepointToGlyph: Table[int32, int32], fontColor: glm.Vec4[GLfloat], text: seq[iw.TerminalChar]): float =
+proc addLine*(instancedEntity: var NimwaveTextEntity, entity: UncompiledTextEntity, font: PackedFont, codepointToGlyph: Table[int32, int32], fontColor: glm.Vec4[GLfloat], text: seq[iw.TerminalChar]): float =
   instancedEntity.uniforms.u_char_counts.data.add(0)
   instancedEntity.uniforms.u_char_counts.disable = false
   add(instancedEntity, entity, font, codepointToGlyph, fontColor, text, 0f)
 
-proc updateUniforms*(e: var AnsiwaveTextEntity, startLine: int, startColumn: int, showBlocks: bool) =
+proc updateUniforms*(e: var NimwaveTextEntity, startLine: int, startColumn: int, showBlocks: bool) =
   e.uniforms.u_start_line.data = startLine.int32
   e.uniforms.u_start_line.disable = false
   e.uniforms.u_start_column.data = startColumn.int32
