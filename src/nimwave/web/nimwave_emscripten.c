@@ -18,7 +18,7 @@ EM_JS(void, nimwave_set_innerhtml, (const char* selector, const char* html), {
   elem.innerHTML = UTF8ToString(html);
 });
 
-EM_JS(void, nimwave_set_location, (const char* selector, int left, int top), {
+EM_JS(void, nimwave_set_position, (const char* selector, int left, int top), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;
   elem.style.left = left + "px";

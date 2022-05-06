@@ -23,7 +23,7 @@ proc emscripten_set_keydown_callback*(target: cstring, userData: pointer, useCap
 
 proc nimwave_get_innerhtml(selector: cstring): cstring {.importc.}
 proc nimwave_set_innerhtml(selector: cstring, html: cstring) {.importc.}
-proc nimwave_set_location(selector: cstring, left: cint, top: cint) {.importc.}
+proc nimwave_set_position(selector: cstring, left: cint, top: cint) {.importc.}
 proc nimwave_set_size(selector: cstring, width: cint, height: cint) {.importc.}
 proc nimwave_get_client_width(): cint {.importc.}
 proc nimwave_get_client_height(): cint {.importc.}
@@ -46,8 +46,8 @@ proc getInnerHtml*(selector: string): string =
 proc setInnerHtml*(selector: string, html: string) =
   nimwave_set_innerhtml(selector, html)
 
-proc setLocation*(selector: string, left: int32, top: int32) =
-  nimwave_set_location(selector, left, top)
+proc setPosition*(selector: string, left: int32, top: int32) =
+  nimwave_set_position(selector, left, top)
 
 proc setSize*(selector: string, width: int32, height: int32) =
   nimwave_set_size(selector, width, height)
