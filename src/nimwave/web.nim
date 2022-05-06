@@ -179,7 +179,7 @@ proc bgToAnsi(color: string): string =
     else:
       ""
 
-proc htmlToAnsi(node: xmltree.XmlNode): string =
+proc htmlToAnsi*(node: xmltree.XmlNode): string =
   var
     fg: string
     bg: string
@@ -223,12 +223,12 @@ proc htmlToAnsi(node: xmltree.XmlNode): string =
   else:
     discard
 
-proc htmlToAnsi(html: string): string =
+proc htmlToAnsi*(html: string): string =
   result = htmlToAnsi(htmlparser.parseHtml(html))
   if strutils.endsWith(result, "\n"):
     result = result[0 ..< result.len-1]
 
-proc charToHtml(ch: iw.TerminalChar, position: tuple[x: int, y: int] = (-1, -1)): string =
+proc charToHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int] = (-1, -1)): string =
   if cast[uint32](ch.ch) == 0:
     return ""
   let
@@ -248,7 +248,7 @@ proc charToHtml(ch: iw.TerminalChar, position: tuple[x: int, y: int] = (-1, -1))
         ""
   return "<span style='$1 $2 $3' $4>".format(fg, bg, additionalStyles, mouseEvents) & $ch.ch & "</span>"
 
-proc ansiToHtml(lines: seq[ref string]): string =
+proc ansiToHtml*(lines: seq[ref string]): string =
   let lines = tui.writeMaybe(lines)
   for line in lines:
     var htmlLine = ""
