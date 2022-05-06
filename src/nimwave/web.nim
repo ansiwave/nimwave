@@ -1,15 +1,11 @@
 from illwave as iw import `[]`, `[]=`, `==`
 from strutils import format
-import tables, unicode
+import tables
 
 from terminal import nil
 
 from htmlparser import nil
 from xmltree import `$`, `[]`
-
-from ./web/emscripten as em import nil
-
-from ./tui import nil
 
 const
   # dark colors
