@@ -1,7 +1,6 @@
 from illwave as iw import `[]`, `[]=`, `==`
 from strutils import format
 import tables, unicode
-from ./tui/termtools/runewidth import nil
 
 from terminal import nil
 
@@ -11,11 +10,6 @@ from xmltree import `$`, `[]`
 from ./web/emscripten as em import nil
 
 from ./tui import nil
-
-const
-  fontHeight = 20
-  fontWidth = 10.81
-  padding = "0.81"
 
 const
   # dark colors
@@ -39,7 +33,7 @@ const
 type
   Vec4 = tuple[r: int, g: int, b: int, a: float]
 
-proc fgColorToString(ch: iw.TerminalChar): string =
+proc fgColorToString*(ch: iw.TerminalChar): string =
   var vec: Vec4
   vec =
     case ch.fg.kind:
@@ -74,7 +68,7 @@ proc fgColorToString(ch: iw.TerminalChar): string =
   let (r, g, b, a) = vec
   "color: rgba($1, $2, $3, $4);".format(r, g, b, a)
 
-proc bgColorToString(ch: iw.TerminalChar): string =
+proc bgColorToString*(ch: iw.TerminalChar): string =
   var vec: Vec4
   vec =
     case ch.bg.kind:
@@ -227,46 +221,4 @@ proc htmlToAnsi*(html: string): string =
   result = htmlToAnsi(htmlparser.parseHtml(html))
   if strutils.endsWith(result, "\n"):
     result = result[0 ..< result.len-1]
-
-proc charToHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int] = (-1, -1)): string =
-  if cast[uint32](ch.ch) == 0:
-    return ""
-  let
-    fg = fgColorToString(ch)
-    bg = bgColorToString(ch)
-    additionalStyles =
-      if runewidth.runeWidth(ch.ch) == 2:
-        # add some padding because double width characters are a little bit narrower
-        # than two normal characters due to font differences
-        "display: inline-block; max-width: $1px; padding-left: $2px; padding-right: $2px;".format(fontHeight, padding)
-      else:
-        ""
-    mouseEvents =
-      if position != (-1, -1):
-        "onmousedown='mouseDown($1, $2)' onmousemove='mouseMove($1, $2)'".format(position.x, position.y)
-      else:
-        ""
-  return "<span style='$1 $2 $3' $4>".format(fg, bg, additionalStyles, mouseEvents) & $ch.ch & "</span>"
-
-proc ansiToHtml*(lines: seq[ref string]): string =
-  let lines = tui.writeMaybe(lines)
-  for line in lines:
-    var htmlLine = ""
-    for ch in line:
-      htmlLine &= charToHtml(ch)
-    if htmlLine == "":
-      htmlLine = "<br />"
-    result &= "<div>" & htmlLine & "</div>"
-  result = "<span>" & result & "</span>"
-
-proc toHtml*(tb: iw.TerminalBuffer): string =
-  let
-    termWidth = iw.width(tb)
-    termHeight = iw.height(tb)
-
-  for y in 0 ..< termHeight:
-    var line = ""
-    for x in 0 ..< termWidth:
-      line &= charToHtml(tb[x, y], (x, y))
-    result &= line
 
