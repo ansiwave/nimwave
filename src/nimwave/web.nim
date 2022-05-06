@@ -1,16 +1,16 @@
 from illwave as iw import `[]`, `[]=`, `==`
 from strutils import format
 import tables, unicode
-from ../termtools/runewidth import nil
+from ./tui/termtools/runewidth import nil
 
 from terminal import nil
 
 from htmlparser import nil
 from xmltree import `$`, `[]`
 
-from emscripten as em import nil
+from ./web/emscripten as em import nil
 
-from ../io import nil
+from ./tui import nil
 
 const
   fontHeight = 20
@@ -249,7 +249,7 @@ proc charToHtml(ch: iw.TerminalChar, position: tuple[x: int, y: int] = (-1, -1))
   return "<span style='$1 $2 $3' $4>".format(fg, bg, additionalStyles, mouseEvents) & $ch.ch & "</span>"
 
 proc ansiToHtml(lines: seq[ref string]): string =
-  let lines = io.writeMaybe(lines)
+  let lines = tui.writeMaybe(lines)
   for line in lines:
     var htmlLine = ""
     for ch in line:

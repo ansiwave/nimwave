@@ -11,8 +11,8 @@ from terminal import nil
 
 const
   version = "330"
-  instancedTextVertexShader = staticRead("shaders/vertex.glsl").format(version)
-  instancedTextFragmentShader = staticRead("shaders/fragment.glsl").format(version)
+  instancedTextVertexShader = staticRead("gui/shaders/vertex.glsl").format(version)
+  instancedTextFragmentShader = staticRead("gui/shaders/fragment.glsl").format(version)
   charRanges* = [
     (32'i32, 331'i32),
     (333'i32, 340'i32),
