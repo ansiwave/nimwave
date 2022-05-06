@@ -259,20 +259,14 @@ proc ansiToHtml(lines: seq[ref string]): string =
     result &= "<div>" & htmlLine & "</div>"
   result = "<span>" & result & "</span>"
 
-var lastTb: iw.TerminalBuffer
-
-proc render*(tb: iw.TerminalBuffer) =
+proc toHtml*(tb: iw.TerminalBuffer): string =
   let
     termWidth = iw.width(tb)
     termHeight = iw.height(tb)
 
-  if lastTb == nil or lastTb[] != tb[]:
-    var content = ""
-    for y in 0 ..< termHeight:
-      var line = ""
-      for x in 0 ..< termWidth:
-        line &= charToHtml(tb[x, y], (x, y))
-      content &= line
-    em.setInnerHtml("#content", content)
-    lastTb = tb
+  for y in 0 ..< termHeight:
+    var line = ""
+    for x in 0 ..< termWidth:
+      line &= charToHtml(tb[x, y], (x, y))
+    result &= line
 
