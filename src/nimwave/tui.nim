@@ -110,7 +110,7 @@ proc writeMaybe*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
     discard
 
 proc write*(lines: seq[ref string]): seq[seq[iw.TerminalChar]] =
-  var tb = iw.newTerminalBuffer(0, 0)
+  var tb = iw.initTerminalBuffer(0, 0)
   var esccodes: seq[string]
   for line in lines:
     var chars: seq[iw.TerminalChar]
