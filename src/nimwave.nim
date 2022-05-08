@@ -1,41 +1,37 @@
 from illwave as iw import nil
 import tables, json
 
-type
-  ComponentProc* = proc (tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) {.closure.}
-  Components* = Table[string, ComponentProc]
-
 proc render*(tb: var iw.TerminalBuffer, node: JsonNode)
 
+proc hbox(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
+  if children.len > 0:
+    let w = int(iw.width(tb) / children.len)
+    var x = 0
+    for child in children:
+      var t = iw.slice(tb, x, 0, w, iw.height(tb))
+      render(t, child)
+      x += w
+
+proc vbox(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
+  if children.len > 0:
+    let h = int(iw.height(tb) / children.len)
+    var y = 0
+    for child in children:
+      var t = iw.slice(tb, 0, y, iw.width(tb), h)
+      render(t, child)
+      y += h
+
+proc rect(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
+  iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1)
+  var t = iw.slice(tb, 1, 1, iw.width(tb)-2, iw.height(tb)-2)
+  for child in children:
+    render(t, child)
+
 var
-  components* = {
-    "hbox":
-    proc (tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) {.closure.} =
-      if children.len > 0:
-        let w = int(iw.width(tb) / children.len)
-        var x = 0
-        for child in children:
-          var t = iw.slice(tb, x, 0, w, iw.height(tb))
-          render(t, child)
-          x += w
-    ,
-    "vbox":
-    proc (tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) {.closure.} =
-      if children.len > 0:
-        let h = int(iw.height(tb) / children.len)
-        var y = 0
-        for child in children:
-          var t = iw.slice(tb, 0, y, iw.width(tb), h)
-          render(t, child)
-          y += h
-    ,
-    "rect":
-    proc (tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) {.closure.} =
-      iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1)
-      var t = iw.slice(tb, 1, 1, iw.width(tb)-2, iw.height(tb)-2)
-      for child in children:
-        render(t, child)
-    ,
+  components = {
+    "hbox": hbox,
+    "vbox": vbox,
+    "rect": rect,
   }.toTable
 
 proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
@@ -54,7 +50,8 @@ proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
           else:
             (newJObject(), @[])
       doAssert components.hasKey(cmd)
-      components[cmd](tb, opts, children)
+      let f = components[cmd]
+      f(tb, opts, children)
   else:
     discard
 
