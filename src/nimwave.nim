@@ -28,7 +28,7 @@ proc rect(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
     render(t, child)
 
 var
-  components = {
+  components* = {
     "hbox": hbox,
     "vbox": vbox,
     "rect": rect,
