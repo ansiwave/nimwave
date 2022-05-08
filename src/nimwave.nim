@@ -1,31 +1,42 @@
 from illwave as iw import nil
-import tables, json
+import tables, sets, json
+from strutils import nil
 
-proc render*(tb: var iw.TerminalBuffer, node: JsonNode)
+type
+  State* = object
+    tb*: iw.TerminalBuffer
+    id*: string
+    ids*: ref HashSet[string]
+    idPath: seq[string]
 
-proc hbox(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
+proc render*(state: var State, node: JsonNode)
+
+proc hbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
   if children.len > 0:
-    let w = int(iw.width(tb) / children.len)
+    let w = int(iw.width(state.tb) / children.len)
     var x = 0
     for child in children:
-      var t = iw.slice(tb, x, 0, w, iw.height(tb))
-      render(t, child)
+      var newState = state
+      newState.tb = iw.slice(state.tb, x, 0, w, iw.height(state.tb))
+      render(newState, child)
       x += w
 
-proc vbox(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
+proc vbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
   if children.len > 0:
-    let h = int(iw.height(tb) / children.len)
+    let h = int(iw.height(state.tb) / children.len)
     var y = 0
     for child in children:
-      var t = iw.slice(tb, 0, y, iw.width(tb), h)
-      render(t, child)
+      var newState = state
+      newState.tb = iw.slice(state.tb, 0, y, iw.width(state.tb), h)
+      render(newState, child)
       y += h
 
-proc rect(tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) =
-  iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1)
-  var t = iw.slice(tb, 1, 1, iw.width(tb)-2, iw.height(tb)-2)
+proc rect(state: var State, opts: JsonNode, children: seq[JsonNode]) =
+  iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1)
+  var newState = state
+  newState.tb = iw.slice(state.tb, 1, 1, iw.width(state.tb)-2, iw.height(state.tb)-2)
   for child in children:
-    render(t, child)
+    render(newState, child)
 
 var
   components* = {
@@ -34,7 +45,13 @@ var
     "rect": rect,
   }.toTable
 
-proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
+proc validateId(id: string): bool =
+  for ch in id:
+    if ch notin {'a'..'z', 'A'..'Z', '0'..'9', '-'}:
+      return false
+  true
+
+proc render(state: var State, node: JsonNode) =
   case node.kind:
   of JArray:
     if node.elems.len > 0:
@@ -49,9 +66,25 @@ proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
               (newJObject(), args)
           else:
             (newJObject(), @[])
-      doAssert components.hasKey(cmd)
+      assert components.hasKey(cmd), "Component not found: " & cmd
+      if opts.hasKey("id"):
+        assert opts["id"].kind == JString, "id must be a string"
+        let id = opts["id"].str
+        assert id.len > 0
+        assert validateId(id), "id can only have letters, numbers, and dashes: " & id
+        state.idPath.add(id)
+        state.id = strutils.join(state.idPath, "/")
+        assert state.id notin state.ids[], "id already exists somewhere else in the tree: " & state.id
+        state.ids[].incl(state.id)
+      else:
+        state.id = ""
       let f = components[cmd]
-      f(tb, opts, children)
+      f(state, opts, children)
   else:
     discard
+
+proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
+  var state = State(tb: tb)
+  new state.ids
+  render(state, node)
 
