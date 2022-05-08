@@ -14,9 +14,9 @@ var
       if children.len > 0:
         let w = int(iw.width(tb) / children.len)
         var x = 0
-        for obj in children:
+        for child in children:
           var t = iw.slice(tb, x, 0, w, iw.height(tb))
-          render(t, obj)
+          render(t, child)
           x += w
     ,
     "vbox":
@@ -24,14 +24,17 @@ var
       if children.len > 0:
         let h = int(iw.height(tb) / children.len)
         var y = 0
-        for obj in children:
+        for child in children:
           var t = iw.slice(tb, 0, y, iw.width(tb), h)
-          render(t, obj)
+          render(t, child)
           y += h
     ,
     "rect":
     proc (tb: var iw.TerminalBuffer, opts: JsonNode, children: seq[JsonNode]) {.closure.} =
       iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1)
+      var t = iw.slice(tb, 1, 1, iw.width(tb)-2, iw.height(tb)-2)
+      for child in children:
+        render(t, child)
     ,
   }.toTable
 
