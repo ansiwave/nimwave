@@ -39,7 +39,7 @@ proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
   of JArray:
     if node.elems.len > 0:
       let
-        cmd = node.elems[0].getStr
+        cmd = node.elems[0].str
         args = node.elems[1 ..< node.elems.len]
         (opts, children) =
           if args.len > 0:
