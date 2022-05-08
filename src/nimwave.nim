@@ -51,7 +51,7 @@ proc validateId(id: string): bool =
       return false
   true
 
-proc render(state: var State, node: JsonNode) =
+proc render*(state: var State, node: JsonNode) =
   case node.kind:
   of JArray:
     if node.elems.len > 0:
