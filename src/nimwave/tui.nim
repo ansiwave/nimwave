@@ -83,8 +83,7 @@ proc applyCode(tb: var iw.TerminalBuffer, code: string) =
 proc write*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
   if y < 0 or y > iw.height(tb):
     return
-  var currX = tb.slice.x + x
-  let currY = tb.slice.y + y
+  var currX = x
   var esccodes: seq[string]
   for ch in runes(s):
     if codes.parseCode(esccodes, ch):
@@ -93,16 +92,16 @@ proc write*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
       applyCode(tb, code)
     let c = iw.TerminalChar(ch: ch, fg: iw.getForegroundColor(tb), bg: iw.getBackgroundColor(tb),
                             style: iw.getStyle(tb))
-    tb[currX, currY] = c
+    tb[currX, y] = c
     currX += 1
     if runewidth.runeWidth(ch) == 2:
-      tb[currX, currY] = iw.TerminalChar()
+      tb[currX, y] = iw.TerminalChar()
       currX += 1
     esccodes = @[]
   for code in esccodes:
     applyCode(tb, code)
   iw.setCursorXPos(tb, currX)
-  iw.setCursorYPos(tb, currY)
+  iw.setCursorYPos(tb, y)
 
 proc writeMaybe*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
   try:
