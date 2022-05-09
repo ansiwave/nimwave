@@ -9,8 +9,6 @@ type
     id*: string
     ids*: ref HashSet[string]
     idPath: seq[string]
-    preferredWidth*: Natural
-    preferredHeight*: Natural
 
 proc slice*(state: State, x, y: int, width, height: Natural): State =
   result = state
@@ -44,15 +42,14 @@ proc box(state: var State, opts: JsonNode, children: seq[JsonNode]) =
         remainingWidth = iw.width(state.tb)
         remainingChildren = children.len
       for child in children:
-        var w = int(remainingWidth / remainingChildren)
-        var newState = slice(state, x, yStart, w - (xStart * 2), iw.height(state.tb) - (yStart * 2))
+        let preWidth = int(remainingWidth / remainingChildren)
+        var newState = slice(state, x, yStart, preWidth - (xStart * 2), iw.height(state.tb) - (yStart * 2))
         render(newState, child)
-        if newState.preferredWidth > 0:
-          w = newState.preferredWidth
-        x += w
-        if w > remainingWidth:
+        let postWidth = iw.width(newState.tb)
+        x += postWidth
+        if postWIdth > remainingWidth:
           break
-        remainingWidth -= w
+        remainingWidth -= postWidth
         remainingChildren -= 1
     of "vertical":
       var
@@ -60,15 +57,14 @@ proc box(state: var State, opts: JsonNode, children: seq[JsonNode]) =
         remainingHeight = iw.height(state.tb)
         remainingChildren = children.len
       for child in children:
-        var h = int(remainingHeight / remainingChildren)
-        var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), h - (yStart * 2))
+        let preHeight = int(remainingHeight / remainingChildren)
+        var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), preHeight - (yStart * 2))
         render(newState, child)
-        if newState.preferredHeight > 0:
-          h = newState.preferredHeight
-        y += h
-        if h > remainingHeight:
+        let postHeight = iw.height(newState.tb)
+        y += postHeight
+        if postHeight > remainingHeight:
           break
-        remainingHeight -= h
+        remainingHeight -= postHeight
         remainingChildren -= 1
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
@@ -97,8 +93,6 @@ proc validateId(id: string): bool =
   true
 
 proc render*(state: var State, node: JsonNode) =
-  state.preferredWidth = 0
-  state.preferredHeight = 0
   case node.kind:
   of JString:
     tui.write(state.tb, 0, 0, node.str)
