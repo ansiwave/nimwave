@@ -124,7 +124,7 @@ proc render*(state: var State, node: JsonNode) =
       let f = components[cmd]
       f(state, opts, children)
   else:
-    discard
+    raise newException(Exception, "Invalid value: " & $node)
 
 proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
   var state = State(tb: tb)
