@@ -4,7 +4,7 @@ from strutils import nil
 from nimwave/tui import nil
 
 type
-  Actions = Table[string, proc (tb: var State, opts: JsonNode)]
+  Actions = Table[string, proc (tb: var State, id: string, opts: JsonNode, children: seq[JsonNode])]
   State* = object
     tb*: iw.TerminalBuffer
     ids: ref HashSet[string]
@@ -133,7 +133,7 @@ proc render*(state: var State, node: JsonNode) =
         let actionName = opts["action"].str
         assert actionName in state.actions, "Action not found: " & actionName
         let a = state.actions[actionName]
-        a(state, opts)
+        a(state, fullId, opts, children)
   else:
     raise newException(Exception, "Invalid value: " & $node)
 
