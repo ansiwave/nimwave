@@ -21,50 +21,59 @@ proc slice*(state: State, x, y: int, width, height: Natural): State =
 
 proc render*(state: var State, node: JsonNode)
 
-proc rect(tb: var iw.TerminalBuffer, opts: JsonNode): tuple[x: int, y: int] =
+proc box(state: var State, opts: JsonNode, children: seq[JsonNode]) =
   var
-    x = 0
-    y = 0
+    xStart = 0
+    yStart = 0
   if "border" in opts:
     case opts["border"].str:
     of "single":
-      iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1)
-      x = 1
-      y = 1
+      iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1)
+      xStart = 1
+      yStart = 1
     of "double":
-      iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1, doubleStyle = true)
-      x = 1
-      y = 1
-  (x, y)
+      iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1, doubleStyle = true)
+      xStart = 1
+      yStart = 1
+  assert "direction" in opts, "box requires 'direction' to be provided"
+  if children.len > 0:
+    case opts["direction"].str:
+    of "horizontal":
+      let w = int(iw.width(state.tb) / children.len)
+      var x = xStart
+      for child in children:
+        var newState = slice(state, x, yStart, w - (xStart * 2), iw.height(state.tb) - (yStart * 2))
+        render(newState, child)
+        if newState.preferredWidth > 0:
+          x += min(newState.preferredWidth, w)
+        else:
+          x += w
+    of "vertical":
+      let h = int(iw.height(state.tb) / children.len)
+      var y = yStart
+      for child in children:
+        var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), h - (yStart * 2))
+        render(newState, child)
+        if newState.preferredHeight > 0:
+          y += min(newState.preferredHeight, h)
+        else:
+          y += h
+    else:
+      raise newException(Exception, "Invalid direction: " & opts["direction"].str)
 
 proc hbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
-  let (xStart, yStart) = rect(state.tb, opts)
-  if children.len > 0:
-    let w = int(iw.width(state.tb) / children.len)
-    var x = xStart
-    for child in children:
-      var newState = slice(state, x, yStart, w - (xStart * 2), iw.height(state.tb) - (yStart * 2))
-      render(newState, child)
-      if newState.preferredWidth > 0:
-        x += min(newState.preferredWidth, w)
-      else:
-        x += w
+  var o = copy(opts)
+  o["direction"] = % "horizontal"
+  box(state, o, children)
 
 proc vbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
-  let (xStart, yStart) = rect(state.tb, opts)
-  if children.len > 0:
-    let h = int(iw.height(state.tb) / children.len)
-    var y = yStart
-    for child in children:
-      var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), h - (yStart * 2))
-      render(newState, child)
-      if newState.preferredHeight > 0:
-        y += min(newState.preferredHeight, h)
-      else:
-        y += h
+  var o = copy(opts)
+  o["direction"] = % "vertical"
+  box(state, o, children)
 
 var
   components* = {
+    "box": box,
     "hbox": hbox,
     "vbox": vbox,
   }.toTable
