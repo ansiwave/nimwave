@@ -4,15 +4,15 @@ from strutils import nil
 from nimwave/tui import nil
 
 type
-  Component* = proc (tb: var State, id: string, opts: JsonNode, children: seq[JsonNode])
-  State* = object
+  Component* = proc (tb: var Context, id: string, opts: JsonNode, children: seq[JsonNode])
+  Context* = object
     tb*: iw.TerminalBuffer
     ids: ref HashSet[string]
     idPath: seq[string]
     components*: Table[string, Component]
 
-proc slice*(state: State, x, y: int, width, height: Natural): State =
-  result = state
+proc slice*(ctx: Context, x, y: int, width, height: Natural): Context =
+  result = ctx
   result.tb.slice.x += x
   result.tb.slice.y += y
   result.tb.slice.width = width
@@ -24,20 +24,20 @@ proc contains*(tb: iw.TerminalBuffer, mouse: iw.MouseInfo): bool =
     mouse.y >= tb.slice.y and
     mouse.y <= tb.slice.y + tb.slice.height
 
-proc render*(state: var State, node: JsonNode)
+proc render*(ctx: var Context, node: JsonNode)
 
-proc box(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) =
+proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var
     xStart = 0
     yStart = 0
   if "border" in opts:
     case opts["border"].str:
     of "single":
-      iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1)
+      iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1)
       xStart = 1
       yStart = 1
     of "double":
-      iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1, doubleStyle = true)
+      iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
       xStart = 1
       yStart = 1
   if children.len > 0:
@@ -46,13 +46,13 @@ proc box(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) 
     of "horizontal":
       var
         x = xStart
-        remainingWidth = iw.width(state.tb)
+        remainingWidth = iw.width(ctx.tb)
         remainingChildren = children.len
       for child in children:
         let preWidth = int(remainingWidth / remainingChildren)
-        var newState = slice(state, x, yStart, preWidth - (xStart * 2), iw.height(state.tb) - (yStart * 2))
-        render(newState, child)
-        let postWidth = iw.width(newState.tb)
+        var newContext = slice(ctx, x, yStart, preWidth - (xStart * 2), iw.height(ctx.tb) - (yStart * 2))
+        render(newContext, child)
+        let postWidth = iw.width(newContext.tb)
         x += postWidth
         if postWIdth > remainingWidth:
           break
@@ -61,13 +61,13 @@ proc box(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) 
     of "vertical":
       var
         y = yStart
-        remainingHeight = iw.height(state.tb)
+        remainingHeight = iw.height(ctx.tb)
         remainingChildren = children.len
       for child in children:
         let preHeight = int(remainingHeight / remainingChildren)
-        var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), preHeight - (yStart * 2))
-        render(newState, child)
-        let postHeight = iw.height(newState.tb)
+        var newContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), preHeight - (yStart * 2))
+        render(newContext, child)
+        let postHeight = iw.height(newContext.tb)
         y += postHeight
         if postHeight > remainingHeight:
           break
@@ -76,15 +76,15 @@ proc box(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) 
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
 
-proc hbox(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) =
+proc hbox(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var o = copy(opts)
   o["direction"] = % "horizontal"
-  box(state, id, o, children)
+  box(ctx, id, o, children)
 
-proc vbox(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) =
+proc vbox(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var o = copy(opts)
   o["direction"] = % "vertical"
-  box(state, id, o, children)
+  box(ctx, id, o, children)
 
 var
   defaultComponents = {
@@ -99,10 +99,10 @@ proc validateId(id: string): bool =
       return false
   true
 
-proc render*(state: var State, node: JsonNode) =
+proc render*(ctx: var Context, node: JsonNode) =
   case node.kind:
   of JString:
-    tui.write(state.tb, 0, 0, node.str)
+    tui.write(ctx.tb, 0, 0, node.str)
   of JArray:
     if node.elems.len > 0:
       let
@@ -122,22 +122,22 @@ proc render*(state: var State, node: JsonNode) =
         let id = opts["id"].str
         assert id.len > 0
         assert validateId(id), "id can only have letters, numbers, and dashes: " & id
-        state.idPath.add(id)
-        fullId = strutils.join(state.idPath, "/")
-        assert id notin state.ids[], "id already exists somewhere else in the tree: " & fullId
-        state.ids[].incl(fullId)
-      if cmd in state.components:
-        let f = state.components[cmd]
-        f(state, fullId, opts, children)
+        ctx.idPath.add(id)
+        fullId = strutils.join(ctx.idPath, "/")
+        assert id notin ctx.ids[], "id already exists somewhere else in the tree: " & fullId
+        ctx.ids[].incl(fullId)
+      if cmd in ctx.components:
+        let f = ctx.components[cmd]
+        f(ctx, fullId, opts, children)
       elif cmd in defaultComponents:
         let f = defaultComponents[cmd]
-        f(state, fullId, opts, children)
+        f(ctx, fullId, opts, children)
       else:
         raise newException(Exception, "Component not found: " & cmd)
   else:
     raise newException(Exception, "Invalid value: " & $node)
 
-proc initState*(tb: iw.TerminalBuffer): State =
-  result = State(tb: tb)
+proc initContext*(tb: iw.TerminalBuffer): Context =
+  result = Context(tb: tb)
   new result.ids
 
