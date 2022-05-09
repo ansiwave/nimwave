@@ -4,11 +4,12 @@ from strutils import nil
 from nimwave/tui import nil
 
 type
+  Actions = Table[string, proc (tb: var State, opts: JsonNode)]
   State* = object
     tb*: iw.TerminalBuffer
-    id*: string
-    ids*: ref HashSet[string]
+    ids: ref HashSet[string]
     idPath: seq[string]
+    actions: Actions
 
 proc slice*(state: State, x, y: int, width, height: Natural): State =
   result = state
@@ -17,9 +18,15 @@ proc slice*(state: State, x, y: int, width, height: Natural): State =
   result.tb.slice.width = width
   result.tb.slice.height = height
 
+proc contains*(tb: iw.TerminalBuffer, mouse: iw.MouseInfo): bool =
+  mouse.x >= tb.slice.x and
+    mouse.x <= tb.slice.x + tb.slice.width and
+    mouse.y >= tb.slice.y and
+    mouse.y <= tb.slice.y + tb.slice.height
+
 proc render*(state: var State, node: JsonNode)
 
-proc box(state: var State, opts: JsonNode, children: seq[JsonNode]) =
+proc box(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var
     xStart = 0
     yStart = 0
@@ -69,15 +76,15 @@ proc box(state: var State, opts: JsonNode, children: seq[JsonNode]) =
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
 
-proc hbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
+proc hbox(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var o = copy(opts)
   o["direction"] = % "horizontal"
-  box(state, o, children)
+  box(state, id, o, children)
 
-proc vbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
+proc vbox(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var o = copy(opts)
   o["direction"] = % "vertical"
-  box(state, o, children)
+  box(state, id, o, children)
 
 var
   components* = {
@@ -110,24 +117,38 @@ proc render*(state: var State, node: JsonNode) =
           else:
             (newJObject(), @[])
       assert components.hasKey(cmd), "Component not found: " & cmd
-      if opts.hasKey("id"):
+      var fullId = ""
+      if "id" in opts:
         assert opts["id"].kind == JString, "id must be a string"
         let id = opts["id"].str
         assert id.len > 0
         assert validateId(id), "id can only have letters, numbers, and dashes: " & id
         state.idPath.add(id)
-        state.id = strutils.join(state.idPath, "/")
-        assert state.id notin state.ids[], "id already exists somewhere else in the tree: " & state.id
-        state.ids[].incl(state.id)
-      else:
-        state.id = ""
+        fullId = strutils.join(state.idPath, "/")
+        assert id notin state.ids[], "id already exists somewhere else in the tree: " & fullId
+        state.ids[].incl(fullId)
       let f = components[cmd]
-      f(state, opts, children)
+      f(state, fullId, opts, children)
+      if "action" in opts:
+        let actionName = opts["action"].str
+        assert actionName in state.actions, "Action not found: " & actionName
+        let a = state.actions[actionName]
+        a(state, opts)
   else:
     raise newException(Exception, "Invalid value: " & $node)
 
-proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
+proc render*(state: var State, actions: Actions, node: JsonNode) =
+  for k, v in actions.pairs:
+    state.actions[k] = v
+  render(state, node)
+
+proc render*(tb: var iw.TerminalBuffer, actions: Actions, node: JsonNode) =
   var state = State(tb: tb)
   new state.ids
+  for k, v in actions.pairs:
+    state.actions[k] = v
   render(state, node)
+
+proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
+  render(tb, Actions(), node)
 
