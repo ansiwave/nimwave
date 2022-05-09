@@ -21,37 +21,52 @@ proc slice*(state: State, x, y: int, width, height: Natural): State =
 
 proc render*(state: var State, node: JsonNode)
 
+proc rect(tb: var iw.TerminalBuffer, opts: JsonNode): tuple[x: int, y: int] =
+  var
+    x = 0
+    y = 0
+  if "border" in opts:
+    case opts["border"].str:
+    of "single":
+      iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1)
+      x = 1
+      y = 1
+    of "double":
+      iw.drawRect(tb, 0, 0, iw.width(tb)-1, iw.height(tb)-1, doubleStyle = true)
+      x = 1
+      y = 1
+  (x, y)
+
 proc hbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
+  let (xStart, yStart) = rect(state.tb, opts)
   if children.len > 0:
     let w = int(iw.width(state.tb) / children.len)
-    var x = 0
+    var x = xStart
     for child in children:
-      var newState = slice(state, x, 0, w, iw.height(state.tb))
+      var newState = slice(state, x, yStart, w - (xStart * 2), iw.height(state.tb) - (yStart * 2))
       render(newState, child)
-      x += w
+      if newState.preferredWidth > 0:
+        x += min(newState.preferredWidth, w)
+      else:
+        x += w
 
 proc vbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
+  let (xStart, yStart) = rect(state.tb, opts)
   if children.len > 0:
     let h = int(iw.height(state.tb) / children.len)
-    var y = 0
+    var y = yStart
     for child in children:
-      var newState = slice(state, 0, y, iw.width(state.tb), h)
+      var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), h - (yStart * 2))
       render(newState, child)
-      y += h
-
-proc rect(state: var State, opts: JsonNode, children: seq[JsonNode]) =
-  iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1)
-  var y = 1
-  for child in children:
-    var newState = slice(state, 1, y, iw.width(state.tb)-2, iw.height(state.tb)-2)
-    render(newState, child)
-    y += max(1, newState.preferredHeight)
+      if newState.preferredHeight > 0:
+        y += min(newState.preferredHeight, h)
+      else:
+        y += h
 
 var
   components* = {
     "hbox": hbox,
     "vbox": vbox,
-    "rect": rect,
   }.toTable
 
 proc validateId(id: string): bool =
