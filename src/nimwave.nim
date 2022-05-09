@@ -40,8 +40,8 @@ proc box(state: var State, id: string, opts: JsonNode, children: seq[JsonNode]) 
       iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1, doubleStyle = true)
       xStart = 1
       yStart = 1
-  assert "direction" in opts, "box requires 'direction' to be provided"
   if children.len > 0:
+    assert "direction" in opts, "box requires 'direction' to be provided"
     case opts["direction"].str:
     of "horizontal":
       var
