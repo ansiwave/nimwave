@@ -4,12 +4,12 @@ from strutils import nil
 from nimwave/tui import nil
 
 type
-  Actions = Table[string, proc (tb: var State, id: string, opts: JsonNode, children: seq[JsonNode])]
+  Component* = proc (tb: var State, id: string, opts: JsonNode, children: seq[JsonNode])
   State* = object
     tb*: iw.TerminalBuffer
     ids: ref HashSet[string]
     idPath: seq[string]
-    actions: Actions
+    components: Table[string, Component]
 
 proc slice*(state: State, x, y: int, width, height: Natural): State =
   result = state
@@ -87,7 +87,7 @@ proc vbox(state: var State, id: string, opts: JsonNode, children: seq[JsonNode])
   box(state, id, o, children)
 
 var
-  components* = {
+  defaultComponents = {
     "box": box,
     "hbox": hbox,
     "vbox": vbox,
@@ -116,7 +116,6 @@ proc render*(state: var State, node: JsonNode) =
               (newJObject(), args)
           else:
             (newJObject(), @[])
-      assert components.hasKey(cmd), "Component not found: " & cmd
       var fullId = ""
       if "id" in opts:
         assert opts["id"].kind == JString, "id must be a string"
@@ -127,28 +126,21 @@ proc render*(state: var State, node: JsonNode) =
         fullId = strutils.join(state.idPath, "/")
         assert id notin state.ids[], "id already exists somewhere else in the tree: " & fullId
         state.ids[].incl(fullId)
-      let f = components[cmd]
-      f(state, fullId, opts, children)
-      if "action" in opts:
-        let actionName = opts["action"].str
-        assert actionName in state.actions, "Action not found: " & actionName
-        let a = state.actions[actionName]
-        a(state, fullId, opts, children)
+      if cmd in state.components:
+        let f = state.components[cmd]
+        f(state, fullId, opts, children)
+      elif cmd in defaultComponents:
+        let f = defaultComponents[cmd]
+        f(state, fullId, opts, children)
+      else:
+        raise newException(Exception, "Component not found: " & cmd)
   else:
     raise newException(Exception, "Invalid value: " & $node)
 
-proc render*(state: var State, actions: Actions, node: JsonNode) =
-  for k, v in actions.pairs:
-    state.actions[k] = v
-  render(state, node)
+proc initState*(tb: iw.TerminalBuffer): State =
+  result = State(tb: tb)
+  new result.ids
 
-proc render*(tb: var iw.TerminalBuffer, actions: Actions, node: JsonNode) =
-  var state = State(tb: tb)
-  new state.ids
-  for k, v in actions.pairs:
-    state.actions[k] = v
-  render(state, node)
-
-proc render*(tb: var iw.TerminalBuffer, node: JsonNode) =
-  render(tb, Actions(), node)
+proc addComponent*(state: var State, id: string, comp: Component) =
+  state.components[id] = comp
 
