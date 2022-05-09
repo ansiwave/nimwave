@@ -9,7 +9,7 @@ type
     tb*: iw.TerminalBuffer
     ids: ref HashSet[string]
     idPath: seq[string]
-    components: Table[string, Component]
+    components*: Table[string, Component]
 
 proc slice*(state: State, x, y: int, width, height: Natural): State =
   result = state
@@ -140,7 +140,4 @@ proc render*(state: var State, node: JsonNode) =
 proc initState*(tb: iw.TerminalBuffer): State =
   result = State(tb: tb)
   new result.ids
-
-proc addComponent*(state: var State, id: string, comp: Component) =
-  state.components[id] = comp
 
