@@ -1,6 +1,7 @@
 from illwave as iw import nil
 import tables, sets, json
 from strutils import nil
+from nimwave/tui import nil
 
 type
   State* = object
@@ -8,6 +9,15 @@ type
     id*: string
     ids*: ref HashSet[string]
     idPath: seq[string]
+    preferredWidth*: Natural
+    preferredHeight*: Natural
+
+proc slice*(state: State, x, y: int, width, height: Natural): State =
+  result = state
+  result.tb.slice.x += x
+  result.tb.slice.y += y
+  result.tb.slice.width = width
+  result.tb.slice.height = height
 
 proc render*(state: var State, node: JsonNode)
 
@@ -16,8 +26,7 @@ proc hbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
     let w = int(iw.width(state.tb) / children.len)
     var x = 0
     for child in children:
-      var newState = state
-      newState.tb = iw.slice(state.tb, x, 0, w, iw.height(state.tb))
+      var newState = slice(state, x, 0, w, iw.height(state.tb))
       render(newState, child)
       x += w
 
@@ -26,17 +35,17 @@ proc vbox(state: var State, opts: JsonNode, children: seq[JsonNode]) =
     let h = int(iw.height(state.tb) / children.len)
     var y = 0
     for child in children:
-      var newState = state
-      newState.tb = iw.slice(state.tb, 0, y, iw.width(state.tb), h)
+      var newState = slice(state, 0, y, iw.width(state.tb), h)
       render(newState, child)
       y += h
 
 proc rect(state: var State, opts: JsonNode, children: seq[JsonNode]) =
   iw.drawRect(state.tb, 0, 0, iw.width(state.tb)-1, iw.height(state.tb)-1)
-  var newState = state
-  newState.tb = iw.slice(state.tb, 1, 1, iw.width(state.tb)-2, iw.height(state.tb)-2)
+  var y = 1
   for child in children:
+    var newState = slice(state, 1, y, iw.width(state.tb)-2, iw.height(state.tb)-2)
     render(newState, child)
+    y += max(1, newState.preferredHeight)
 
 var
   components* = {
@@ -52,7 +61,11 @@ proc validateId(id: string): bool =
   true
 
 proc render*(state: var State, node: JsonNode) =
+  state.preferredWidth = 0
+  state.preferredHeight = 0
   case node.kind:
+  of JString:
+    tui.write(state.tb, 0, 0, node.str)
   of JArray:
     if node.elems.len > 0:
       let
