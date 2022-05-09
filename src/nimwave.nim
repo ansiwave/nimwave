@@ -39,25 +39,37 @@ proc box(state: var State, opts: JsonNode, children: seq[JsonNode]) =
   if children.len > 0:
     case opts["direction"].str:
     of "horizontal":
-      let w = int(iw.width(state.tb) / children.len)
-      var x = xStart
+      var
+        x = xStart
+        remainingWidth = iw.width(state.tb)
+        remainingChildren = children.len
       for child in children:
+        var w = int(remainingWidth / remainingChildren)
         var newState = slice(state, x, yStart, w - (xStart * 2), iw.height(state.tb) - (yStart * 2))
         render(newState, child)
         if newState.preferredWidth > 0:
-          x += min(newState.preferredWidth, w)
-        else:
-          x += w
+          w = newState.preferredWidth
+        x += w
+        if w > remainingWidth:
+          break
+        remainingWidth -= w
+        remainingChildren -= 1
     of "vertical":
-      let h = int(iw.height(state.tb) / children.len)
-      var y = yStart
+      var
+        y = yStart
+        remainingHeight = iw.height(state.tb)
+        remainingChildren = children.len
       for child in children:
+        var h = int(remainingHeight / remainingChildren)
         var newState = slice(state, xStart, y, iw.width(state.tb) - (xStart * 2), h - (yStart * 2))
         render(newState, child)
         if newState.preferredHeight > 0:
-          y += min(newState.preferredHeight, h)
-        else:
-          y += h
+          h = newState.preferredHeight
+        y += h
+        if h > remainingHeight:
+          break
+        remainingHeight -= h
+        remainingChildren -= 1
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
 
