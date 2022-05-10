@@ -95,7 +95,7 @@ var
 
 proc validateId(id: string): bool =
   for ch in id:
-    if ch notin {'a'..'z', 'A'..'Z', '0'..'9', '-'}:
+    if ch == '/':
       return false
   true
 
@@ -121,7 +121,7 @@ proc render*(ctx: var Context, node: JsonNode) =
         assert opts["id"].kind == JString, "id must be a string"
         let id = opts["id"].str
         assert id.len > 0
-        assert validateId(id), "id can only have letters, numbers, and dashes: " & id
+        assert validateId(id), "id cannot contain a / character: " & id
         ctx.idPath.add(id)
         fullId = strutils.join(ctx.idPath, "/")
         assert id notin ctx.ids[], "id already exists somewhere else in the tree: " & fullId
