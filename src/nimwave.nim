@@ -54,7 +54,7 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         render(newContext, child)
         let postWidth = iw.width(newContext.tb)
         x += postWidth
-        if postWIdth > remainingWidth:
+        if postWidth > remainingWidth:
           break
         remainingWidth -= postWidth
         remainingChildren -= 1
