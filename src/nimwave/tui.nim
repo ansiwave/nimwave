@@ -81,8 +81,6 @@ proc applyCode(tb: var iw.TerminalBuffer, code: string) =
     i += 1
 
 proc write*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
-  if y < 0 or y > iw.height(tb):
-    return
   var currX = x
   var esccodes: seq[string]
   for ch in runes(s):
