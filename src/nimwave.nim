@@ -13,16 +13,7 @@ type
 
 proc slice*(ctx: Context, x, y: int, width, height: Natural): Context =
   result = ctx
-  result.tb.slice.x += x
-  result.tb.slice.y += y
-  result.tb.slice.width = width
-  result.tb.slice.height = height
-
-proc contains*(tb: iw.TerminalBuffer, mouse: iw.MouseInfo): bool =
-  mouse.x >= tb.slice.x and
-    mouse.x <= tb.slice.x + tb.slice.width and
-    mouse.y >= tb.slice.y and
-    mouse.y <= tb.slice.y + tb.slice.height
+  result.tb = iw.slice(result.tb, x, y, width, height)
 
 proc render*(ctx: var Context, node: JsonNode)
 
