@@ -37,22 +37,32 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
     assert "direction" in opts, "box requires 'direction' to be provided"
     case opts["direction"].str:
     of "horizontal":
-      let initialWidth = int(iw.width(ctx.tb) / children.len)
-      var x = xStart
+      var
+        x = xStart
+        remainingWidth = iw.width(ctx.tb).int
+        remainingChildren = children.len
       for child in children:
-        var childContext = slice(ctx, x, yStart, initialWidth - (xStart * 2), iw.height(ctx.tb) - (yStart * 2))
+        let initialWidth = int(remainingWidth / remainingChildren)
+        var childContext = slice(ctx, x, yStart, max(0, initialWidth - (xStart * 2)), iw.height(ctx.tb) - (yStart * 2))
         render(childContext, child)
         let actualWidth = iw.width(childContext.tb)
         x += actualWidth
+        remainingWidth -= actualWidth
+        remainingChildren -= 1
       ctx = slice(ctx, 0, 0, x+xStart, iw.height(ctx.tb))
     of "vertical":
-      let initialHeight = int(iw.height(ctx.tb) / children.len)
-      var y = yStart
+      var
+        y = yStart
+        remainingHeight = iw.height(ctx.tb).int
+        remainingChildren = children.len
       for child in children:
-        var childContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), initialHeight - (yStart * 2))
+        let initialHeight = int(remainingHeight / remainingChildren)
+        var childContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), max(0, initialHeight - (yStart * 2)))
         render(childContext, child)
         let actualHeight = iw.height(childContext.tb)
         y += actualHeight
+        remainingHeight -= actualHeight
+        remainingChildren -= 1
       ctx = slice(ctx, 0, 0, iw.width(ctx.tb), y+yStart)
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
