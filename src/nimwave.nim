@@ -37,36 +37,22 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
     assert "direction" in opts, "box requires 'direction' to be provided"
     case opts["direction"].str:
     of "horizontal":
-      var
-        x = xStart
-        remainingWidth = iw.width(ctx.tb)
-        remainingChildren = children.len
+      let initialWidth = int(iw.width(ctx.tb) / children.len)
+      var x = xStart
       for child in children:
-        let preWidth = int(remainingWidth / remainingChildren)
-        var childContext = slice(ctx, x, yStart, preWidth - (xStart * 2), iw.height(ctx.tb) - (yStart * 2))
+        var childContext = slice(ctx, x, yStart, initialWidth - (xStart * 2), iw.height(ctx.tb) - (yStart * 2))
         render(childContext, child)
-        let postWidth = iw.width(childContext.tb)
-        x += postWidth
-        if postWidth > remainingWidth:
-          break
-        remainingWidth -= postWidth
-        remainingChildren -= 1
+        let actualWidth = iw.width(childContext.tb)
+        x += actualWidth
       ctx = slice(ctx, 0, 0, x+xStart, iw.height(ctx.tb))
     of "vertical":
-      var
-        y = yStart
-        remainingHeight = iw.height(ctx.tb)
-        remainingChildren = children.len
+      let initialHeight = int(iw.height(ctx.tb) / children.len)
+      var y = yStart
       for child in children:
-        let preHeight = int(remainingHeight / remainingChildren)
-        var childContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), preHeight - (yStart * 2))
+        var childContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), initialHeight - (yStart * 2))
         render(childContext, child)
-        let postHeight = iw.height(childContext.tb)
-        y += postHeight
-        if postHeight > remainingHeight:
-          break
-        remainingHeight -= postHeight
-        remainingChildren -= 1
+        let actualHeight = iw.height(childContext.tb)
+        y += actualHeight
       ctx = slice(ctx, 0, 0, iw.width(ctx.tb), y+yStart)
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
