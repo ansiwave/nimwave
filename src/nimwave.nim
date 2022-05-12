@@ -43,14 +43,15 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         remainingChildren = children.len
       for child in children:
         let preWidth = int(remainingWidth / remainingChildren)
-        var newContext = slice(ctx, x, yStart, preWidth - (xStart * 2), iw.height(ctx.tb) - (yStart * 2))
-        render(newContext, child)
-        let postWidth = iw.width(newContext.tb)
+        var childContext = slice(ctx, x, yStart, preWidth - (xStart * 2), iw.height(ctx.tb) - (yStart * 2))
+        render(childContext, child)
+        let postWidth = iw.width(childContext.tb)
         x += postWidth
         if postWidth > remainingWidth:
           break
         remainingWidth -= postWidth
         remainingChildren -= 1
+      ctx = slice(ctx, 0, 0, x+xStart, iw.height(ctx.tb))
     of "vertical":
       var
         y = yStart
@@ -58,14 +59,15 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         remainingChildren = children.len
       for child in children:
         let preHeight = int(remainingHeight / remainingChildren)
-        var newContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), preHeight - (yStart * 2))
-        render(newContext, child)
-        let postHeight = iw.height(newContext.tb)
+        var childContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), preHeight - (yStart * 2))
+        render(childContext, child)
+        let postHeight = iw.height(childContext.tb)
         y += postHeight
         if postHeight > remainingHeight:
           break
         remainingHeight -= postHeight
         remainingChildren -= 1
+      ctx = slice(ctx, 0, 0, iw.width(ctx.tb), y+yStart)
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
 
