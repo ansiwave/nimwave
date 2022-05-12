@@ -4,7 +4,7 @@ from strutils import nil
 from nimwave/tui import nil
 
 type
-  Component* = proc (tb: var Context, id: string, opts: JsonNode, children: seq[JsonNode])
+  Component* = proc (ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode])
   Context* = object
     tb*: iw.TerminalBuffer
     ids: ref HashSet[string]
