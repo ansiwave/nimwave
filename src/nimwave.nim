@@ -31,6 +31,8 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
       xStart = 1
       yStart = 1
+    else:
+      raise newException(Exception, "Invalid border: " & opts["border"].str)
   if children.len > 0:
     assert "direction" in opts, "box requires 'direction' to be provided"
     case opts["direction"].str:
