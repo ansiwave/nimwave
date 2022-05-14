@@ -121,6 +121,20 @@ proc runComponent(ctx: var Context, node: JsonNode, children: seq[JsonNode]) =
   else:
     raise newException(Exception, "Component not found: " & cmd)
 
+proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
+  for node in nodes:
+    if node.kind == JArray:
+      if node.elems.len > 0:
+        if node.elems[0].kind != JObject:
+          flatten(node.elems, flatNodes)
+        else:
+          flatNodes.add(node)
+    else:
+      flatNodes.add(node)
+
+proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
+  flatten(nodes, result)
+
 proc render*(ctx: var Context, node: JsonNode) =
   case node.kind:
   of JString:
@@ -132,7 +146,7 @@ proc render*(ctx: var Context, node: JsonNode) =
     if node.elems.len > 0:
       let
         firstElem = node.elems[0]
-        children = node.elems[1 ..< node.elems.len]
+        children = flatten(node.elems[1 ..< node.elems.len])
       if firstElem.kind == JObject:
         runComponent(ctx, firstElem, children)
       else:
