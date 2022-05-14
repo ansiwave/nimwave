@@ -136,7 +136,7 @@ proc runComponent(ctx: var Context, node: JsonNode) =
 proc render*(ctx: var Context, node: JsonNode) =
   case node.kind:
   of JString:
-    ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
+    ctx = slice(ctx, 0, 0, min(iw.width(ctx.tb), node.str.runeLen), 1)
     tui.write(ctx.tb, 0, 0, node.str)
   of JObject:
     runComponent(ctx, node)
