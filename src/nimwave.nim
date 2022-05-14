@@ -11,9 +11,9 @@ type
     idPath: seq[string]
     components*: Table[string, Component]
 
-proc slice*(ctx: Context, x, y: int, width, height: Natural): Context =
+proc slice*(ctx: Context, x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool] = (false, false, false, false)): Context =
   result = ctx
-  result.tb = iw.slice(result.tb, x, y, width, height)
+  result.tb = iw.slice(result.tb, x, y, width, height, grow)
 
 proc render*(ctx: var Context, node: JsonNode)
 
