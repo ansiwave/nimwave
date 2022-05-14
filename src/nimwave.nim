@@ -42,7 +42,7 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         remainingWidth = iw.width(ctx.tb).int
         remainingChildren = children.len
       for child in children:
-        var childContext = slice(ctx, x, yStart, max(0, remainingWidth - (xStart * 2)), iw.height(ctx.tb) - (yStart * 2))
+        var childContext = slice(ctx, x, yStart, max(0, remainingWidth - (xStart * 2)), max(0, iw.height(ctx.tb) - (yStart * 2)))
         render(childContext, child)
         let actualWidth = iw.width(childContext.tb)
         x += actualWidth
@@ -55,7 +55,7 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         remainingHeight = iw.height(ctx.tb).int
         remainingChildren = children.len
       for child in children:
-        var childContext = slice(ctx, xStart, y, iw.width(ctx.tb) - (xStart * 2), max(0, remainingHeight - (yStart * 2)))
+        var childContext = slice(ctx, xStart, y, max(0, iw.width(ctx.tb) - (xStart * 2)), max(0, remainingHeight - (yStart * 2)))
         render(childContext, child)
         let actualHeight = iw.height(childContext.tb)
         y += actualHeight
