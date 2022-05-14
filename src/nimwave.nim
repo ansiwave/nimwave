@@ -101,7 +101,7 @@ proc validateId(id: string): bool =
 proc render*(ctx: var Context, node: JsonNode) =
   case node.kind:
   of JString:
-    ctx = slice(ctx, 0, 0, node.str.runeLen, iw.height(ctx.tb))
+    ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
     tui.write(ctx.tb, 0, 0, node.str)
   of JArray:
     if node.elems.len > 0:
