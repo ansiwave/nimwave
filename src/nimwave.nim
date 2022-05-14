@@ -7,12 +7,14 @@ type
   Component* = proc (ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode])
   Context* = object
     tb*: iw.TerminalBuffer
+    parent*: iw.TerminalBuffer
     ids: ref HashSet[string]
     idPath: seq[string]
     components*: Table[string, Component]
 
 proc slice*(ctx: Context, x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool] = (false, false, false, false)): Context =
   result = ctx
+  result.parent = result.tb
   result.tb = iw.slice(result.tb, x, y, width, height, grow)
 
 proc render*(ctx: var Context, node: JsonNode)
@@ -24,11 +26,9 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
   if "border" in opts:
     case opts["border"].str:
     of "single":
-      iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1)
       xStart = 1
       yStart = 1
     of "double":
-      iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
       xStart = 1
       yStart = 1
     else:
@@ -42,7 +42,8 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         remainingWidth = iw.width(ctx.tb).int
         remainingChildren = children.len
       for child in children:
-        var childContext = slice(ctx, x, yStart, max(0, remainingWidth - (xStart * 2)), max(0, iw.height(ctx.tb) - (yStart * 2)))
+        let initialWidth = int(remainingWidth / remainingChildren)
+        var childContext = slice(ctx, x, yStart, max(0, initialWidth - (xStart * 2)), max(0, iw.height(ctx.tb) - (yStart * 2)))
         render(childContext, child)
         let actualWidth = iw.width(childContext.tb)
         x += actualWidth
@@ -55,7 +56,8 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
         remainingHeight = iw.height(ctx.tb).int
         remainingChildren = children.len
       for child in children:
-        var childContext = slice(ctx, xStart, y, max(0, iw.width(ctx.tb) - (xStart * 2)), max(0, remainingHeight - (yStart * 2)))
+        let initialHeight = int(remainingHeight / remainingChildren)
+        var childContext = slice(ctx, xStart, y, max(0, iw.width(ctx.tb) - (xStart * 2)), max(0, initialHeight - (yStart * 2)))
         render(childContext, child)
         let actualHeight = iw.height(childContext.tb)
         y += actualHeight
@@ -64,6 +66,14 @@ proc box(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) 
       ctx = slice(ctx, 0, 0, iw.width(ctx.tb), y+yStart)
     else:
       raise newException(Exception, "Invalid direction: " & opts["direction"].str)
+  if "border" in opts:
+    case opts["border"].str:
+    of "single":
+      iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1)
+    of "double":
+      iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
+    else:
+      raise newException(Exception, "Invalid border: " & opts["border"].str)
 
 proc hbox(ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode]) =
   var o = copy(opts)
@@ -128,6 +138,6 @@ proc render*(ctx: var Context, node: JsonNode) =
     raise newException(Exception, "Invalid value: " & $node)
 
 proc initContext*(tb: iw.TerminalBuffer): Context =
-  result = Context(tb: tb)
+  result = Context(tb: tb, parent: tb)
   new result.ids
 
