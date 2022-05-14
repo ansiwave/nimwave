@@ -6,16 +6,17 @@ from nimwave/tui import nil
 type
   Component* = proc (ctx: var Context, id: string, opts: JsonNode, children: seq[JsonNode])
   Context* = object
+    parent*: ref Context
     tb*: iw.TerminalBuffer
-    parent*: iw.TerminalBuffer
     ids: ref HashSet[string]
     idPath: seq[string]
     components*: Table[string, Component]
 
 proc slice*(ctx: Context, x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool] = (false, false, false, false)): Context =
   result = ctx
-  result.parent = result.tb
-  result.tb = iw.slice(result.tb, x, y, width, height, grow)
+  new result.parent
+  result.parent[] = ctx
+  result.tb = iw.slice(ctx.tb, x, y, width, height, grow)
 
 proc render*(ctx: var Context, node: JsonNode)
 
@@ -138,6 +139,6 @@ proc render*(ctx: var Context, node: JsonNode) =
     raise newException(Exception, "Invalid value: " & $node)
 
 proc initContext*(tb: iw.TerminalBuffer): Context =
-  result = Context(tb: tb, parent: tb)
+  result = Context(tb: tb)
   new result.ids
 
