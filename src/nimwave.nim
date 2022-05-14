@@ -12,11 +12,17 @@ type
     idPath: seq[string]
     components*: Table[string, Component]
 
-proc slice*(ctx: Context, x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool] = (false, false, false, false)): Context =
+proc slice*(ctx: Context, x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool]): Context =
   result = ctx
   new result.parent
   result.parent[] = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, grow)
+
+proc slice*(ctx: Context, x, y: int, width, height: Natural): Context =
+  result = ctx
+  new result.parent
+  result.parent[] = ctx
+  result.tb = iw.slice(ctx.tb, x, y, width, height)
 
 proc render*(ctx: var Context, node: JsonNode)
 
