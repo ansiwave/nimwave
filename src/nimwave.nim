@@ -99,7 +99,18 @@ proc validateId(id: string): bool =
       return false
   true
 
-proc runComponent(ctx: var Context, node: JsonNode, children: seq[JsonNode]) =
+proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
+  for node in nodes:
+    if node.kind == JArray:
+      if node.elems.len > 0:
+        flatten(node.elems, flatNodes)
+    else:
+      flatNodes.add(node)
+
+proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
+  flatten(nodes, result)
+
+proc runComponent(ctx: var Context, node: JsonNode) =
   assert "type" in node, "'type' required: " & $node
   let cmd = node["type"].str
   var fullId = ""
@@ -112,6 +123,7 @@ proc runComponent(ctx: var Context, node: JsonNode, children: seq[JsonNode]) =
     fullId = strutils.join(ctx.idPath, "/")
     assert id notin ctx.ids[], "id already exists somewhere else in the tree: " & fullId
     ctx.ids[].incl(fullId)
+  let children = flatten(if "children" in node: node["children"].elems else: @[])
   if cmd in ctx.components:
     let f = ctx.components[cmd]
     f(ctx, fullId, node, children)
@@ -121,37 +133,16 @@ proc runComponent(ctx: var Context, node: JsonNode, children: seq[JsonNode]) =
   else:
     raise newException(Exception, "Component not found: " & cmd)
 
-proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
-  for node in nodes:
-    if node.kind == JArray:
-      if node.elems.len > 0:
-        if node.elems[0].kind != JObject:
-          flatten(node.elems, flatNodes)
-        else:
-          flatNodes.add(node)
-    else:
-      flatNodes.add(node)
-
-proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
-  flatten(nodes, result)
-
 proc render*(ctx: var Context, node: JsonNode) =
   case node.kind:
   of JString:
     ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
     tui.write(ctx.tb, 0, 0, node.str)
   of JObject:
-    runComponent(ctx, node, @[])
+    runComponent(ctx, node)
   of JArray:
-    if node.elems.len > 0:
-      let
-        firstElem = node.elems[0]
-        children = flatten(node.elems[1 ..< node.elems.len])
-      if firstElem.kind == JObject:
-        runComponent(ctx, firstElem, children)
-      else:
-        for elem in node.elems:
-          render(ctx, elem)
+    for elem in node.elems:
+      render(ctx, elem)
   else:
     raise newException(Exception, "Invalid value: " & $node)
 
