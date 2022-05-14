@@ -4,29 +4,30 @@ from strutils import nil
 from nimwave/tui import nil
 
 type
-  Component* = proc (ctx: var Context, id: string, node: JsonNode, children: seq[JsonNode])
-  Context* = object
-    parent*: ref Context
+  Component*[T] = proc (ctx: var Context[T], id: string, node: JsonNode, children: seq[JsonNode])
+  Context*[T] = object
+    parent*: ref Context[T]
     tb*: iw.TerminalBuffer
     ids: ref HashSet[string]
     idPath: seq[string]
-    components*: Table[string, Component]
+    components*: Table[string, Component[T]]
+    data*: T
 
-proc slice*(ctx: Context, x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool]): Context =
+proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool]): Context[T] =
   result = ctx
   new result.parent
   result.parent[] = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, grow)
 
-proc slice*(ctx: Context, x, y: int, width, height: Natural): Context =
+proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
   result = ctx
   new result.parent
   result.parent[] = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height)
 
-proc render*(ctx: var Context, node: JsonNode)
+proc render*[T](ctx: var Context[T], node: JsonNode)
 
-proc box(ctx: var Context, id: string, node: JsonNode, children: seq[JsonNode]) =
+proc box[T](ctx: var Context[T], id: string, node: JsonNode, children: seq[JsonNode]) =
   var
     xStart = 0
     yStart = 0
@@ -82,22 +83,15 @@ proc box(ctx: var Context, id: string, node: JsonNode, children: seq[JsonNode]) 
     else:
       raise newException(Exception, "Invalid border: " & node["border"].str)
 
-proc hbox(ctx: var Context, id: string, node: JsonNode, children: seq[JsonNode]) =
+proc hbox[T](ctx: var Context[T], id: string, node: JsonNode, children: seq[JsonNode]) =
   var o = copy(node)
   o["direction"] = % "horizontal"
   box(ctx, id, o, children)
 
-proc vbox(ctx: var Context, id: string, node: JsonNode, children: seq[JsonNode]) =
+proc vbox[T](ctx: var Context[T], id: string, node: JsonNode, children: seq[JsonNode]) =
   var o = copy(node)
   o["direction"] = % "vertical"
   box(ctx, id, o, children)
-
-var
-  defaultComponents = {
-    "box": box,
-    "hbox": hbox,
-    "vbox": vbox,
-  }.toTable
 
 proc validateId(id: string): bool =
   for ch in id:
@@ -116,7 +110,7 @@ proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
 proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
   flatten(nodes, result)
 
-proc runComponent(ctx: var Context, node: JsonNode) =
+proc runComponent[T](ctx: var Context[T], node: JsonNode) =
   assert "type" in node, "'type' required: " & $node
   let cmd = node["type"].str
   var fullId = ""
@@ -133,13 +127,20 @@ proc runComponent(ctx: var Context, node: JsonNode) =
   if cmd in ctx.components:
     let f = ctx.components[cmd]
     f(ctx, fullId, node, children)
-  elif cmd in defaultComponents:
-    let f = defaultComponents[cmd]
-    f(ctx, fullId, node, children)
   else:
-    raise newException(Exception, "Component not found: " & cmd)
+    const
+      defaultComponents = {
+        "box": box[T],
+        "hbox": hbox[T],
+        "vbox": vbox[T],
+      }.toTable
+    if cmd in defaultComponents:
+      let f = defaultComponents[cmd]
+      f(ctx, fullId, node, children)
+    else:
+      raise newException(Exception, "Component not found: " & cmd)
 
-proc render*(ctx: var Context, node: JsonNode) =
+proc render*[T](ctx: var Context[T], node: JsonNode) =
   case node.kind:
   of JString:
     ctx = slice(ctx, 0, 0, min(iw.width(ctx.tb), node.str.runeLen), 1)
@@ -152,7 +153,7 @@ proc render*(ctx: var Context, node: JsonNode) =
   else:
     raise newException(Exception, "Invalid value: " & $node)
 
-proc initContext*(tb: iw.TerminalBuffer): Context =
-  result = Context(tb: tb)
+proc initContext*[T](tb: iw.TerminalBuffer): Context[T] =
+  result = Context[T](tb: tb)
   new result.ids
 
