@@ -13,17 +13,17 @@ type
     components*: Table[string, Component[T]]
     data*: T
 
-proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, grow: tuple[top: bool, right: bool, bottom: bool, left: bool]): Context[T] =
-  result = ctx
-  new result.parent
-  result.parent[] = ctx
-  result.tb = iw.slice(ctx.tb, x, y, width, height, grow)
-
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
   result = ctx
   new result.parent
   result.parent[] = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height)
+
+proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple[x: int, y: int, width: int, height: int]): Context[T] =
+  result = ctx
+  new result.parent
+  result.parent[] = ctx
+  result.tb = iw.slice(ctx.tb, x, y, width, height, bounds)
 
 proc render*[T](ctx: var Context[T], node: JsonNode)
 
