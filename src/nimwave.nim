@@ -149,7 +149,10 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
   case node.kind:
   of JString:
     ctx = slice(ctx, 0, 0, min(iw.width(ctx.tb), node.str.runeLen), 1)
-    tui.write(ctx.tb, 0, 0, node.str)
+    when defined(release):
+      tui.writeMaybe(ctx.tb, 0, 0, node.str)
+    else:
+      tui.write(ctx.tb, 0, 0, node.str)
   of JObject:
     runComponent(ctx, node)
   of JArray:
