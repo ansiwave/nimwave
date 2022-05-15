@@ -36,14 +36,9 @@ proc box[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
     yStart = 0
   if "border" in node:
     case node["border"].str:
-    of "single":
+    of "single", "double", "none":
       xStart = 1
       yStart = 1
-    of "double":
-      xStart = 1
-      yStart = 1
-    else:
-      raise newException(Exception, "Invalid border: " & node["border"].str)
   if children.len > 0:
     assert "direction" in node, "box requires 'direction' to be provided"
     case node["direction"].str:
@@ -83,8 +78,6 @@ proc box[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1)
     of "double":
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
-    else:
-      raise newException(Exception, "Invalid border: " & node["border"].str)
 
 proc hbox[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
   var o = copy(node)
