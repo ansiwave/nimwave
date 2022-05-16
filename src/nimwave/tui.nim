@@ -8,16 +8,16 @@ from colors import nil
 from ansiutils/codes import nil
 
 const simpleColors = [
-  ([0.0, 0.0, 0.0], (terminal.fgBlack, terminal.bgBlack)),
-  ([255.0, 0.0, 0.0], (terminal.fgRed, terminal.bgRed)),
-  ([0.0, 128.0, 0.0], (terminal.fgGreen, terminal.bgGreen)),
-  ([255.0, 255.0, 0.0], (terminal.fgYellow, terminal.bgYellow)),
-  ([0.0, 0.0, 255.0], (terminal.fgBlue, terminal.bgBlue)),
-  ([255.0, 0.0, 255.0], (terminal.fgMagenta, terminal.bgMagenta)),
-  ([0.0, 255.0, 255.0], (terminal.fgCyan, terminal.bgCyan)),
-  ([255.0, 255.0, 255.0], (terminal.fgWhite, terminal.bgWhite)),
+  ([0.0, 0.0, 0.0], (iw.fgBlack, iw.bgBlack)),
+  ([255.0, 0.0, 0.0], (iw.fgRed, iw.bgRed)),
+  ([0.0, 128.0, 0.0], (iw.fgGreen, iw.bgGreen)),
+  ([255.0, 255.0, 0.0], (iw.fgYellow, iw.bgYellow)),
+  ([0.0, 0.0, 255.0], (iw.fgBlue, iw.bgBlue)),
+  ([255.0, 0.0, 255.0], (iw.fgMagenta, iw.bgMagenta)),
+  ([0.0, 255.0, 255.0], (iw.fgCyan, iw.bgCyan)),
+  ([255.0, 255.0, 255.0], (iw.fgWhite, iw.bgWhite)),
 ]
-var tree = kdtree.newKdTree[(terminal.ForegroundColor, terminal.BackgroundColor)](simpleColors)
+var tree = kdtree.newKdTree[(iw.SimpleForegroundColor, iw.SimpleBackgroundColor)](simpleColors)
 
 proc applyCode(tb: var iw.TerminalBuffer, code: string) =
   let
@@ -27,8 +27,8 @@ proc applyCode(tb: var iw.TerminalBuffer, code: string) =
   while i < params.len:
     let param = params[i]
     if param == 0:
-      iw.setBackgroundColor(tb, terminal.bgDefault)
-      iw.setForegroundColor(tb, terminal.fgDefault)
+      iw.setBackgroundColor(tb, iw.bgNone)
+      iw.setForegroundColor(tb, iw.fgNone)
       iw.setStyle(tb, {})
     elif param >= 1 and param <= 9:
       var style = iw.getStyle(tb)
@@ -40,9 +40,9 @@ proc applyCode(tb: var iw.TerminalBuffer, code: string) =
       style.excl(terminal.Style(2))
       iw.setStyle(tb, style)
     elif param >= 30 and param <= 37:
-      iw.setForegroundColor(tb, terminal.ForegroundColor(param))
+      iw.setForegroundColor(tb, iw.SimpleForegroundColor(param))
     elif param >= 40 and param <= 47:
-      iw.setBackgroundColor(tb, terminal.BackgroundColor(param))
+      iw.setBackgroundColor(tb, iw.SimpleBackgroundColor(param))
     elif param == 38 or param == 48:
       if i + 1 < params.len:
         let mode = params[i + 1]
@@ -51,9 +51,9 @@ proc applyCode(tb: var iw.TerminalBuffer, code: string) =
           if i + 2 < params.len:
             # TODO: correctly convert the 256 color value to one of the 8 terminal colors
             if param == 38:
-              iw.setForegroundColor(tb, terminal.fgDefault)
+              iw.setForegroundColor(tb, iw.fgNone)
             else:
-              iw.setBackgroundColor(tb, terminal.bgDefault)
+              iw.setBackgroundColor(tb, iw.bgNone)
             i += 3
             continue
         # convert truecolor to standard 8 terminal colors

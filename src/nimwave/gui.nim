@@ -294,26 +294,26 @@ proc fgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
     of iw.SimpleColor:
       if terminal.styleBright in ch.style:
         case ch.fg.simpleColor:
-        of terminal.fgBlack: blackColor
-        of terminal.fgRed: brightRedColor
-        of terminal.fgGreen: brightGreenColor
-        of terminal.fgYellow: brightYellowColor
-        of terminal.fgBlue: brightBlueColor
-        of terminal.fgMagenta: brightMagentaColor
-        of terminal.fgCyan: brightCyanColor
-        of terminal.fgWhite: whiteColor
-        of terminal.fgDefault, terminal.fg8Bit: defaultColor
+        of iw.fgNone: defaultColor
+        of iw.fgBlack: blackColor
+        of iw.fgRed: brightRedColor
+        of iw.fgGreen: brightGreenColor
+        of iw.fgYellow: brightYellowColor
+        of iw.fgBlue: brightBlueColor
+        of iw.fgMagenta: brightMagentaColor
+        of iw.fgCyan: brightCyanColor
+        of iw.fgWhite: whiteColor
       else:
         case ch.fg.simpleColor:
-        of terminal.fgBlack: blackColor
-        of terminal.fgRed: redColor
-        of terminal.fgGreen: greenColor
-        of terminal.fgYellow: yellowColor
-        of terminal.fgBlue: blueColor
-        of terminal.fgMagenta: magentaColor
-        of terminal.fgCyan: cyanColor
-        of terminal.fgWhite: whiteColor
-        of terminal.fgDefault, terminal.fg8Bit: defaultColor
+        of iw.fgNone: defaultColor
+        of iw.fgBlack: blackColor
+        of iw.fgRed: redColor
+        of iw.fgGreen: greenColor
+        of iw.fgYellow: yellowColor
+        of iw.fgBlue: blueColor
+        of iw.fgMagenta: magentaColor
+        of iw.fgCyan: cyanColor
+        of iw.fgWhite: whiteColor
     of iw.TrueColor:
       let (r, g, b) = iw.fromColor(ch.fg.trueColor)
       glm.vec4(r.GLFloat/255f, g.GLFloat/255f, b.GLFloat/255f, 1.GLfloat)
@@ -326,26 +326,26 @@ proc bgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
     of iw.SimpleColor:
       if terminal.styleBright in ch.style:
         case ch.bg.simpleColor:
-        of terminal.bgBlack: blackColor
-        of terminal.bgRed: brightRedColor
-        of terminal.bgGreen: brightGreenColor
-        of terminal.bgYellow: brightYellowColor
-        of terminal.bgBlue: brightBlueColor
-        of terminal.bgMagenta: brightMagentaColor
-        of terminal.bgCyan: brightCyanColor
-        of terminal.bgWhite: whiteColor
-        of terminal.bgDefault, terminal.bg8Bit: defaultColor
+        of iw.bgNone: defaultColor
+        of iw.bgBlack: blackColor
+        of iw.bgRed: brightRedColor
+        of iw.bgGreen: brightGreenColor
+        of iw.bgYellow: brightYellowColor
+        of iw.bgBlue: brightBlueColor
+        of iw.bgMagenta: brightMagentaColor
+        of iw.bgCyan: brightCyanColor
+        of iw.bgWhite: whiteColor
       else:
         case ch.bg.simpleColor:
-        of terminal.bgBlack: blackColor
-        of terminal.bgRed: redColor
-        of terminal.bgGreen: greenColor
-        of terminal.bgYellow: yellowColor
-        of terminal.bgBlue: blueColor
-        of terminal.bgMagenta: magentaColor
-        of terminal.bgCyan: cyanColor
-        of terminal.bgWhite: whiteColor
-        of terminal.bgDefault, terminal.bg8Bit: defaultColor
+        of iw.bgNone: defaultColor
+        of iw.bgBlack: blackColor
+        of iw.bgRed: redColor
+        of iw.bgGreen: greenColor
+        of iw.bgYellow: yellowColor
+        of iw.bgBlue: blueColor
+        of iw.bgMagenta: magentaColor
+        of iw.bgCyan: cyanColor
+        of iw.bgWhite: whiteColor
     of iw.TrueColor:
       let (r, g, b) = iw.fromColor(ch.bg.trueColor)
       glm.vec4(r.GLFloat/255f, g.GLFloat/255f, b.GLFloat/255f, 1.GLfloat)
@@ -526,7 +526,7 @@ proc add*(instancedEntity: var NimwaveTextEntity, entity: UncompiledTextEntity, 
     let
       bgColor = bgColorToVec4(tchar, fontColor)
       fgColor = fgColorToVec4(tchar, fontColor)
-    if not (tchar.bg.kind == iw.SimpleColor and tchar.bg.simpleColor == terminal.bgDefault):
+    if not (tchar.bg.kind == iw.SimpleColor and tchar.bg.simpleColor == iw.bgNone):
       let blockCharIndex = codepointToGlyph["█".toRunes[0].int32]
       var bg = entity
       bg.crop(font.chars[blockCharIndex], result, font.baseline)
