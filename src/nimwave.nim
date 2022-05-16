@@ -89,12 +89,6 @@ proc vbox[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
   o["direction"] = % "vertical"
   box(ctx, o, children)
 
-proc validateId(id: string): bool =
-  for ch in id:
-    if ch == '/':
-      return false
-  true
-
 proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
   for node in nodes:
     if node.kind == JArray:
@@ -114,7 +108,6 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
     assert node["id"].kind == JString, "id must be a string"
     let id = node["id"].str
     assert id.len > 0
-    assert validateId(id), "id cannot contain a / character: " & id
     ctx.idPath.add(id)
     fullId = strutils.join(ctx.idPath, "/")
     assert id notin ctx.ids[], "id already exists somewhere else in the tree: " & fullId
