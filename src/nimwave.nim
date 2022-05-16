@@ -1,6 +1,5 @@
 from illwave as iw import nil
 import tables, sets, json, unicode
-from strutils import nil
 from nimwave/tui import nil
 
 type
@@ -9,11 +8,11 @@ type
   Context*[T] = object
     parent*: ref Context[T]
     tb*: iw.TerminalBuffer
-    ids: ref HashSet[string]
-    idPath: seq[string]
+    ids*: ref HashSet[seq[string]]
+    idPath*: seq[string]
     components*: Table[string, RenderProc[T]]
     statefulComponents*: Table[string, MountProc[T]]
-    mountedComponents*: ref Table[string, RenderProc[T]]
+    mountedComponents*: ref Table[seq[string], RenderProc[T]]
     data*: T
 
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
@@ -103,24 +102,24 @@ proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
 proc runComponent[T](ctx: var Context[T], node: JsonNode) =
   assert "type" in node, "'type' required: " & $node
   let cmd = node["type"].str
-  var fullId = ""
+  var fullId: seq[string]
   if "id" in node:
     assert node["id"].kind == JString, "id must be a string"
     let id = node["id"].str
     assert id.len > 0
     ctx.idPath.add(id)
-    fullId = strutils.join(ctx.idPath, "/")
-    assert id notin ctx.ids[], "id already exists somewhere else in the tree: " & fullId
-    ctx.ids[].incl(fullId)
+    assert ctx.idPath notin ctx.ids[], "id already exists somewhere else in the tree: " & $ctx.idPath
+    ctx.ids[].incl(ctx.idPath)
+    fullId = ctx.idPath
   let children = flatten(if "children" in node: node["children"].elems else: @[])
   if cmd in ctx.components:
     let f = ctx.components[cmd]
     f(ctx, node, children)
-  elif fullId != "" and fullId in ctx.mountedComponents:
+  elif fullId.len > 0 and fullId in ctx.mountedComponents:
     let f = ctx.mountedComponents[fullId]
     f(ctx, node, children)
   elif cmd in ctx.statefulComponents:
-    assert fullId != ""
+    assert fullId.len > 0
     let m = ctx.statefulComponents[cmd]
     let f = m(ctx, node, children)
     ctx.mountedComponents[fullId] = f
