@@ -17,7 +17,7 @@ const simpleColors = [
   ([0.0, 255.0, 255.0], (iw.fgCyan, iw.bgCyan)),
   ([255.0, 255.0, 255.0], (iw.fgWhite, iw.bgWhite)),
 ]
-var tree = kdtree.newKdTree[(iw.SimpleForegroundColor, iw.SimpleBackgroundColor)](simpleColors)
+var tree = kdtree.newKdTree[(iw.ForegroundColor, iw.BackgroundColor)](simpleColors)
 
 proc applyCode(tb: var iw.TerminalBuffer, code: string) =
   let
@@ -40,9 +40,9 @@ proc applyCode(tb: var iw.TerminalBuffer, code: string) =
       style.excl(terminal.Style(2))
       iw.setStyle(tb, style)
     elif param >= 30 and param <= 37:
-      iw.setForegroundColor(tb, iw.SimpleForegroundColor(param))
+      iw.setForegroundColor(tb, iw.ForegroundColor(param))
     elif param >= 40 and param <= 47:
-      iw.setBackgroundColor(tb, iw.SimpleBackgroundColor(param))
+      iw.setBackgroundColor(tb, iw.BackgroundColor(param))
     elif param == 38 or param == 48:
       if i + 1 < params.len:
         let mode = params[i + 1]
@@ -89,7 +89,7 @@ proc write*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
     for code in esccodes:
       applyCode(tb, code)
     let c = iw.TerminalChar(ch: ch, fg: iw.getForegroundColor(tb), bg: iw.getBackgroundColor(tb),
-                            style: iw.getStyle(tb))
+                            style: iw.getStyle(tb), fgTruecolor: iw.getForegroundTrueColor(tb), bgTruecolor: iw.getBackgroundTrueColor(tb))
     tb[currX, y] = c
     currX += 1
     if runewidth.runeWidth(ch) == 2:
@@ -118,7 +118,7 @@ proc write*(lines: seq[ref string]): seq[seq[iw.TerminalChar]] =
       for code in esccodes:
         applyCode(tb, code)
       let c = iw.TerminalChar(ch: ch, fg: iw.getForegroundColor(tb), bg: iw.getBackgroundColor(tb),
-                              style: iw.getStyle(tb))
+                              style: iw.getStyle(tb), fgTruecolor: iw.getForegroundTrueColor(tb), bgTruecolor: iw.getBackgroundTrueColor(tb))
       chars.add c
       esccodes = @[]
     result.add chars
