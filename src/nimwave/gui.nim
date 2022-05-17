@@ -290,10 +290,12 @@ const
 
 proc fgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Vec4[GLFloat] =
   result =
-    case ch.fg.kind:
-    of iw.SimpleColor:
+    if ch.fgTrueColor.ord != 0:
+      let (r, g, b) = iw.fromColor(ch.fgTrueColor)
+      glm.vec4(r.GLFloat/255f, g.GLFloat/255f, b.GLFloat/255f, 1.GLfloat)
+    else:
       if terminal.styleBright in ch.style:
-        case ch.fg.simpleColor:
+        case ch.fg:
         of iw.fgNone: defaultColor
         of iw.fgBlack: blackColor
         of iw.fgRed: brightRedColor
@@ -304,7 +306,7 @@ proc fgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
         of iw.fgCyan: brightCyanColor
         of iw.fgWhite: whiteColor
       else:
-        case ch.fg.simpleColor:
+        case ch.fg:
         of iw.fgNone: defaultColor
         of iw.fgBlack: blackColor
         of iw.fgRed: redColor
@@ -314,18 +316,17 @@ proc fgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
         of iw.fgMagenta: magentaColor
         of iw.fgCyan: cyanColor
         of iw.fgWhite: whiteColor
-    of iw.TrueColor:
-      let (r, g, b) = iw.fromColor(ch.fg.trueColor)
-      glm.vec4(r.GLFloat/255f, g.GLFloat/255f, b.GLFloat/255f, 1.GLfloat)
   if ch.cursor:
     result[3] = 0.7
 
 proc bgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Vec4[GLfloat] =
   result =
-    case ch.bg.kind:
-    of iw.SimpleColor:
+    if ch.bgTrueColor.ord != 0:
+      let (r, g, b) = iw.fromColor(ch.bgTrueColor)
+      glm.vec4(r.GLFloat/255f, g.GLFloat/255f, b.GLFloat/255f, 1.GLfloat)
+    else:
       if terminal.styleBright in ch.style:
-        case ch.bg.simpleColor:
+        case ch.bg:
         of iw.bgNone: defaultColor
         of iw.bgBlack: blackColor
         of iw.bgRed: brightRedColor
@@ -336,7 +337,7 @@ proc bgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
         of iw.bgCyan: brightCyanColor
         of iw.bgWhite: whiteColor
       else:
-        case ch.bg.simpleColor:
+        case ch.bg:
         of iw.bgNone: defaultColor
         of iw.bgBlack: blackColor
         of iw.bgRed: redColor
@@ -346,9 +347,6 @@ proc bgColorToVec4(ch: iw.TerminalChar, defaultColor: glm.Vec4[GLfloat]): glm.Ve
         of iw.bgMagenta: magentaColor
         of iw.bgCyan: cyanColor
         of iw.bgWhite: whiteColor
-    of iw.TrueColor:
-      let (r, g, b) = iw.fromColor(ch.bg.trueColor)
-      glm.vec4(r.GLFloat/255f, g.GLFloat/255f, b.GLFloat/255f, 1.GLfloat)
   if ch.cursor:
     result[3] = 0.7
 
@@ -526,7 +524,7 @@ proc add*(instancedEntity: var NimwaveTextEntity, entity: UncompiledTextEntity, 
     let
       bgColor = bgColorToVec4(tchar, fontColor)
       fgColor = fgColorToVec4(tchar, fontColor)
-    if not (tchar.bg.kind == iw.SimpleColor and tchar.bg.simpleColor == iw.bgNone):
+    if tchar.bg != iw.bgNone:
       let blockCharIndex = codepointToGlyph["█".toRunes[0].int32]
       var bg = entity
       bg.crop(font.chars[blockCharIndex], result, font.baseline)

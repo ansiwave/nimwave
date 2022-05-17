@@ -75,10 +75,12 @@ type
 proc fgColorToString*(ch: iw.TerminalChar): string =
   var vec: Vec4
   vec =
-    case ch.fg.kind:
-    of iw.SimpleColor:
+    if ch.fgTrueColor.ord != 0:
+      let (r, g, b) = iw.fromColor(ch.fgTrueColor)
+      (r.int, g.int, b.int, 1.0)
+    else:
       if terminal.styleBright in ch.style:
-        case ch.fg.simpleColor:
+        case ch.fg:
         of iw.fgNone: return ""
         of iw.fgBlack: blackColor
         of iw.fgRed: brightRedColor
@@ -89,7 +91,7 @@ proc fgColorToString*(ch: iw.TerminalChar): string =
         of iw.fgCyan: brightCyanColor
         of iw.fgWhite: whiteColor
       else:
-        case ch.fg.simpleColor:
+        case ch.fg:
         of iw.fgNone: return ""
         of iw.fgBlack: blackColor
         of iw.fgRed: redColor
@@ -99,9 +101,6 @@ proc fgColorToString*(ch: iw.TerminalChar): string =
         of iw.fgMagenta: magentaColor
         of iw.fgCyan: cyanColor
         of iw.fgWhite: whiteColor
-    of iw.TrueColor:
-      let (r, g, b) = iw.fromColor(ch.fg.trueColor)
-      (r.int, g.int, b.int, 1.0)
   if ch.cursor:
     vec.a = 0.7
   let (r, g, b, a) = vec
@@ -110,10 +109,12 @@ proc fgColorToString*(ch: iw.TerminalChar): string =
 proc bgColorToString*(ch: iw.TerminalChar): string =
   var vec: Vec4
   vec =
-    case ch.bg.kind:
-    of iw.SimpleColor:
+    if ch.bgTrueColor.ord != 0:
+      let (r, g, b) = iw.fromColor(ch.bgTrueColor)
+      (r.int, g.int, b.int, 1.0)
+    else:
       if terminal.styleBright in ch.style:
-        case ch.bg.simpleColor:
+        case ch.bg:
         of iw.bgNone: return ""
         of iw.bgBlack: blackColor
         of iw.bgRed: brightRedColor
@@ -124,7 +125,7 @@ proc bgColorToString*(ch: iw.TerminalChar): string =
         of iw.bgCyan: brightCyanColor
         of iw.bgWhite: whiteColor
       else:
-        case ch.bg.simpleColor:
+        case ch.bg:
         of iw.bgNone: return ""
         of iw.bgBlack: blackColor
         of iw.bgRed: redColor
@@ -134,9 +135,6 @@ proc bgColorToString*(ch: iw.TerminalChar): string =
         of iw.bgMagenta: magentaColor
         of iw.bgCyan: cyanColor
         of iw.bgWhite: whiteColor
-    of iw.TrueColor:
-      let (r, g, b) = iw.fromColor(ch.bg.trueColor)
-      (r.int, g.int, b.int, 1.0)
   if ch.cursor:
     vec.a = 0.7
   let (r, g, b, a) = vec
