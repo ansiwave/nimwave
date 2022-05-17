@@ -524,7 +524,7 @@ proc add*(instancedEntity: var NimwaveTextEntity, entity: UncompiledTextEntity, 
     let
       bgColor = bgColorToVec4(tchar, fontColor)
       fgColor = fgColorToVec4(tchar, fontColor)
-    if tchar.bg != iw.bgNone:
+    if not (tchar.bgTruecolor.ord == 0 and tchar.bg == iw.bgNone):
       let blockCharIndex = codepointToGlyph["█".toRunes[0].int32]
       var bg = entity
       bg.crop(font.chars[blockCharIndex], result, font.baseline)
