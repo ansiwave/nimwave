@@ -3,8 +3,8 @@ import tables, sets, json, unicode
 from nimwave/tui import nil
 
 type
-  MountProc*[T] = proc (ctx: var Context[T], node: JsonNode, children: seq[JsonNode]): RenderProc[T]
-  RenderProc*[T] = proc (ctx: var Context[T], node: JsonNode, children: seq[JsonNode])
+  MountProc*[T] = proc (ctx: var Context[T], node: JsonNode): RenderProc[T]
+  RenderProc*[T] = proc (ctx: var Context[T], node: JsonNode)
   Context*[T] = object
     parent*: ref Context[T]
     tb*: iw.TerminalBuffer
@@ -29,7 +29,7 @@ proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple
 
 proc render*[T](ctx: var Context[T], node: JsonNode)
 
-proc box[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
+proc box[T](ctx: var Context[T], node: JsonNode) =
   var
     xStart = 0
     yStart = 0
@@ -38,6 +38,7 @@ proc box[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
     of "single", "double", "none":
       xStart = 1
       yStart = 1
+  let children = if "children" in node: node["children"].elems else: @[]
   if children.len > 0:
     assert "direction" in node, "box requires 'direction' to be provided"
     case node["direction"].str:
@@ -78,15 +79,15 @@ proc box[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
     of "double":
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
 
-proc hbox[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
+proc hbox[T](ctx: var Context[T], node: JsonNode) =
   var o = copy(node)
   o["direction"] = % "horizontal"
-  box(ctx, o, children)
+  box(ctx, o)
 
-proc vbox[T](ctx: var Context[T], node: JsonNode, children: seq[JsonNode]) =
+proc vbox[T](ctx: var Context[T], node: JsonNode) =
   var o = copy(node)
   o["direction"] = % "vertical"
-  box(ctx, o, children)
+  box(ctx, o)
 
 proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
   for node in nodes:
@@ -111,19 +112,20 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
     assert ctx.idPath notin ctx.ids[], "id already exists somewhere else in the tree: " & $ctx.idPath
     ctx.ids[].incl(ctx.idPath)
     fullId = ctx.idPath
-  let children = flatten(if "children" in node: node["children"].elems else: @[])
+  if "children" in node:
+    node["children"] = % flatten(node["children"].elems)
   if cmd in ctx.components:
     let f = ctx.components[cmd]
-    f(ctx, node, children)
+    f(ctx, node)
   elif fullId.len > 0 and fullId in ctx.mountedComponents:
     let f = ctx.mountedComponents[fullId]
-    f(ctx, node, children)
+    f(ctx, node)
   elif cmd in ctx.statefulComponents:
     assert fullId.len > 0
     let m = ctx.statefulComponents[cmd]
-    let f = m(ctx, node, children)
+    let f = m(ctx, node)
     ctx.mountedComponents[fullId] = f
-    f(ctx, node, children)
+    f(ctx, node)
   else:
     const
       defaultComponents = {
@@ -133,7 +135,7 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
       }.toTable
     if cmd in defaultComponents:
       let f = defaultComponents[cmd]
-      f(ctx, node, children)
+      f(ctx, node)
     else:
       raise newException(Exception, "Component not found: " & cmd)
 
