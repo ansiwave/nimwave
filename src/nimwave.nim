@@ -6,7 +6,6 @@ type
   MountProc*[T] = proc (ctx: var Context[T], node: JsonNode): RenderProc[T]
   RenderProc*[T] = proc (ctx: var Context[T], node: JsonNode)
   Context*[T] = object
-    parent*: ref Context[T]
     tb*: iw.TerminalBuffer
     ids*: ref HashSet[seq[string]]
     idPath*: seq[string]
@@ -17,14 +16,10 @@ type
 
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
   result = ctx
-  new result.parent
-  result.parent[] = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height)
 
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple[x: int, y: int, width: int, height: int]): Context[T] =
   result = ctx
-  new result.parent
-  result.parent[] = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, bounds)
 
 proc render*[T](ctx: var Context[T], node: JsonNode)
