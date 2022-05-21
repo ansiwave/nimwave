@@ -22,6 +22,17 @@ proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple
   result = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, bounds)
 
+proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
+  for node in nodes:
+    if node.kind == JArray:
+      if node.elems.len > 0:
+        flatten(node.elems, flatNodes)
+    else:
+      flatNodes.add(node)
+
+proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
+  flatten(nodes, result)
+
 proc render*[T](ctx: var Context[T], node: JsonNode)
 
 proc box[T](ctx: var Context[T], node: JsonNode) =
@@ -33,7 +44,7 @@ proc box[T](ctx: var Context[T], node: JsonNode) =
     of "single", "double", "none":
       xStart = 1
       yStart = 1
-  let children = if "children" in node: node["children"].elems else: @[]
+  let children = if "children" in node: flatten(node["children"].elems) else: @[]
   if children.len > 0:
     assert "direction" in node, "box requires 'direction' to be provided"
     case node["direction"].str:
@@ -84,17 +95,6 @@ proc vbox[T](ctx: var Context[T], node: JsonNode) =
   o["direction"] = % "vertical"
   box(ctx, o)
 
-proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
-  for node in nodes:
-    if node.kind == JArray:
-      if node.elems.len > 0:
-        flatten(node.elems, flatNodes)
-    else:
-      flatNodes.add(node)
-
-proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
-  flatten(nodes, result)
-
 proc runComponent[T](ctx: var Context[T], node: JsonNode) =
   assert "type" in node, "'type' required: " & $node
   let cmd = node["type"].str
@@ -107,8 +107,6 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
     assert ctx.idPath notin ctx.ids[], "id already exists somewhere else in the tree: " & $ctx.idPath
     ctx.ids[].incl(ctx.idPath)
     fullId = ctx.idPath
-  if "children" in node:
-    node["children"] = % flatten(node["children"].elems)
   if cmd in ctx.components:
     let f = ctx.components[cmd]
     f(ctx, node)
