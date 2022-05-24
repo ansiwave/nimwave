@@ -98,8 +98,6 @@ proc write*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
     esccodes = @[]
   for code in esccodes:
     applyCode(tb, code)
-  iw.setCursorXPos(tb, currX)
-  iw.setCursorYPos(tb, y)
 
 proc writeMaybe*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
   try:
