@@ -35,7 +35,11 @@ proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
 
 proc render*[T](ctx: var Context[T], node: JsonNode)
 
-proc box[T](ctx: var Context[T], node: JsonNode) =
+type
+  Direction = enum
+    Vertical, Horizontal,
+
+proc box[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
   var
     xStart = 0
     yStart = 0
@@ -46,9 +50,8 @@ proc box[T](ctx: var Context[T], node: JsonNode) =
       yStart = 1
   let children = if "children" in node: flatten(node["children"].elems) else: @[]
   if children.len > 0:
-    assert "direction" in node, "box requires 'direction' to be provided"
-    case node["direction"].str:
-    of "horizontal":
+    case direction:
+    of Horizontal:
       var
         x = xStart
         remainingWidth = iw.width(ctx.tb).int
@@ -62,7 +65,7 @@ proc box[T](ctx: var Context[T], node: JsonNode) =
         remainingWidth -= actualWidth
         remainingChildren -= 1
       ctx = slice(ctx, 0, 0, x+xStart, iw.height(ctx.tb))
-    of "vertical":
+    of Vertical:
       var
         y = yStart
         remainingHeight = iw.height(ctx.tb).int
@@ -86,14 +89,10 @@ proc box[T](ctx: var Context[T], node: JsonNode) =
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
 
 proc hbox[T](ctx: var Context[T], node: JsonNode) =
-  var o = copy(node)
-  o["direction"] = % "horizontal"
-  box(ctx, o)
+  box(ctx, node, Horizontal)
 
 proc vbox[T](ctx: var Context[T], node: JsonNode) =
-  var o = copy(node)
-  o["direction"] = % "vertical"
-  box(ctx, o)
+  box(ctx, node, Vertical)
 
 proc runComponent[T](ctx: var Context[T], node: JsonNode) =
   assert "type" in node, "'type' required: " & $node
@@ -122,7 +121,6 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
   else:
     const
       defaultComponents = {
-        "box": box[T],
         "hbox": hbox[T],
         "vbox": vbox[T],
       }.toTable
