@@ -99,28 +99,31 @@ proc vbox[T](ctx: var Context[T], node: JsonNode) =
   box(ctx, node, Vertical)
 
 proc runComponent[T](ctx: var Context[T], node: JsonNode) =
-  assert "type" in node, "'type' required: " & $node
+  if "type" notin node:
+    raise newException(Exception, "'type' required:\n" & $node)
   let cmd = node["type"].str
-  var fullId: seq[string]
+  var idPath: seq[string]
   if "id" in node:
-    assert node["id"].kind == JString, "id must be a string"
+    if node["id"].kind != JString:
+      raise newException(Exception, "id must be a string")
     let id = node["id"].str
-    assert id.len > 0
     ctx.idPath.add(id)
-    assert ctx.idPath notin ctx.ids[], "id already exists somewhere else in the tree: " & $ctx.idPath
+    if ctx.idPath in ctx.ids[]:
+      raise newException(Exception, "id already exists somewhere else in the tree: " & $ctx.idPath)
     ctx.ids[].incl(ctx.idPath)
-    fullId = ctx.idPath
+    idPath = ctx.idPath
   if cmd in ctx.components:
     let f = ctx.components[cmd]
     f(ctx, node)
-  elif fullId.len > 0 and fullId in ctx.mountedComponents:
-    let f = ctx.mountedComponents[fullId]
+  elif idPath.len > 0 and idPath in ctx.mountedComponents:
+    let f = ctx.mountedComponents[idPath]
     f(ctx, node)
   elif cmd in ctx.statefulComponents:
-    assert fullId.len > 0
+    if idPath.len == 0:
+      raise newException(Exception, "'id' required for stateful component:\n" & $node)
     let m = ctx.statefulComponents[cmd]
     let f = m(ctx, node)
-    ctx.mountedComponents[fullId] = f
+    ctx.mountedComponents[idPath] = f
     f(ctx, node)
   else:
     const
@@ -148,7 +151,7 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
     for elem in node.elems:
       render(ctx, elem)
   else:
-    raise newException(Exception, "Invalid value: " & $node)
+    raise newException(Exception, "Invalid value:\n" & $node)
 
 proc initContext*[T](tb: iw.TerminalBuffer): Context[T] =
   result = Context[T](tb: tb)
