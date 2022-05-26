@@ -22,6 +22,52 @@ proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple
   result = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, bounds)
 
+proc runComponent[T](ctx: var Context[T], node: JsonNode) =
+  if "type" notin node:
+    raise newException(Exception, "'type' required:\n" & $node)
+  let cmd = node["type"].str
+  var idPath: seq[string]
+  if "id" in node:
+    if node["id"].kind != JString:
+      raise newException(Exception, "id must be a string")
+    let id = node["id"].str
+    ctx.idPath.add(id)
+    if ctx.idPath in ctx.ids[]:
+      raise newException(Exception, "id already exists somewhere else in the tree: " & $ctx.idPath)
+    ctx.ids[].incl(ctx.idPath)
+    idPath = ctx.idPath
+  if cmd in ctx.components:
+    let f = ctx.components[cmd]
+    f(ctx, node)
+  elif idPath.len > 0 and idPath in ctx.mountedComponents:
+    let f = ctx.mountedComponents[idPath]
+    f(ctx, node)
+  elif cmd in ctx.statefulComponents:
+    if idPath.len == 0:
+      raise newException(Exception, "'id' required for stateful component:\n" & $node)
+    let m = ctx.statefulComponents[cmd]
+    let f = m(ctx, node)
+    ctx.mountedComponents[idPath] = f
+    f(ctx, node)
+  else:
+    raise newException(Exception, "Component not found: " & cmd)
+
+proc render*[T](ctx: var Context[T], node: JsonNode) =
+  case node.kind:
+  of JString:
+    ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
+    when defined(release):
+      tui.writeMaybe(ctx.tb, 0, 0, node.str)
+    else:
+      tui.write(ctx.tb, 0, 0, node.str)
+  of JObject:
+    runComponent(ctx, node)
+  of JArray:
+    for elem in node.elems:
+      render(ctx, elem)
+  else:
+    raise newException(Exception, "Invalid value:\n" & $node)
+
 proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
   for node in nodes:
     if node.kind == JArray:
@@ -32,8 +78,6 @@ proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
 
 proc flatten(nodes: seq[JsonNode]): seq[JsonNode] =
   flatten(nodes, result)
-
-proc render*[T](ctx: var Context[T], node: JsonNode)
 
 type
   Direction = enum
@@ -97,52 +141,6 @@ proc hbox[T](ctx: var Context[T], node: JsonNode) =
 
 proc vbox[T](ctx: var Context[T], node: JsonNode) =
   box(ctx, node, Vertical)
-
-proc runComponent[T](ctx: var Context[T], node: JsonNode) =
-  if "type" notin node:
-    raise newException(Exception, "'type' required:\n" & $node)
-  let cmd = node["type"].str
-  var idPath: seq[string]
-  if "id" in node:
-    if node["id"].kind != JString:
-      raise newException(Exception, "id must be a string")
-    let id = node["id"].str
-    ctx.idPath.add(id)
-    if ctx.idPath in ctx.ids[]:
-      raise newException(Exception, "id already exists somewhere else in the tree: " & $ctx.idPath)
-    ctx.ids[].incl(ctx.idPath)
-    idPath = ctx.idPath
-  if cmd in ctx.components:
-    let f = ctx.components[cmd]
-    f(ctx, node)
-  elif idPath.len > 0 and idPath in ctx.mountedComponents:
-    let f = ctx.mountedComponents[idPath]
-    f(ctx, node)
-  elif cmd in ctx.statefulComponents:
-    if idPath.len == 0:
-      raise newException(Exception, "'id' required for stateful component:\n" & $node)
-    let m = ctx.statefulComponents[cmd]
-    let f = m(ctx, node)
-    ctx.mountedComponents[idPath] = f
-    f(ctx, node)
-  else:
-    raise newException(Exception, "Component not found: " & cmd)
-
-proc render*[T](ctx: var Context[T], node: JsonNode) =
-  case node.kind:
-  of JString:
-    ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
-    when defined(release):
-      tui.writeMaybe(ctx.tb, 0, 0, node.str)
-    else:
-      tui.write(ctx.tb, 0, 0, node.str)
-  of JObject:
-    runComponent(ctx, node)
-  of JArray:
-    for elem in node.elems:
-      render(ctx, elem)
-  else:
-    raise newException(Exception, "Invalid value:\n" & $node)
 
 proc initContext*[T](tb: iw.TerminalBuffer): Context[T] =
   result = Context[T](tb: tb)
