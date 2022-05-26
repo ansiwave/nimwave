@@ -53,6 +53,8 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
     raise newException(Exception, "Component not found: " & cmd)
 
 proc render*[T](ctx: var Context[T], node: JsonNode) =
+  if ctx.tb.buf == nil:
+    raise newException(Exception, "The `tb` field must be set in the context object")
   if ctx.ids == nil:
     var newCtx = ctx
     new newCtx.ids
