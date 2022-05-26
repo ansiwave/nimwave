@@ -53,6 +53,11 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
     raise newException(Exception, "Component not found: " & cmd)
 
 proc render*[T](ctx: var Context[T], node: JsonNode) =
+  if ctx.ids == nil:
+    var newCtx = ctx
+    new newCtx.ids
+    render(newCtx, node)
+    return
   case node.kind:
   of JString:
     ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
@@ -142,9 +147,8 @@ proc hbox[T](ctx: var Context[T], node: JsonNode) =
 proc vbox[T](ctx: var Context[T], node: JsonNode) =
   box(ctx, node, Vertical)
 
-proc initContext*[T](tb: iw.TerminalBuffer): Context[T] =
-  result = Context[T](tb: tb)
-  new result.ids
+proc initContext*[T](): Context[T] =
+  result = Context[T]()
   new result.mountedComponents
   result.components["hbox"] = hbox[T]
   result.components["vbox"] = vbox[T]
