@@ -126,16 +126,7 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
     ctx.mountedComponents[idPath] = f
     f(ctx, node)
   else:
-    const
-      defaultComponents = {
-        "hbox": hbox[T],
-        "vbox": vbox[T],
-      }.toTable
-    if cmd in defaultComponents:
-      let f = defaultComponents[cmd]
-      f(ctx, node)
-    else:
-      raise newException(Exception, "Component not found: " & cmd)
+    raise newException(Exception, "Component not found: " & cmd)
 
 proc render*[T](ctx: var Context[T], node: JsonNode) =
   case node.kind:
@@ -157,4 +148,6 @@ proc initContext*[T](tb: iw.TerminalBuffer): Context[T] =
   result = Context[T](tb: tb)
   new result.ids
   new result.mountedComponents
+  result.components["hbox"] = hbox[T]
+  result.components["vbox"] = vbox[T]
 
