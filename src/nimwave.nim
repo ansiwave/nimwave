@@ -7,11 +7,11 @@ type
   RenderProc*[T] = proc (ctx: var Context[T], node: JsonNode)
   Context*[T] = object
     tb*: iw.TerminalBuffer
-    ids*: ref HashSet[seq[string]]
-    idPath*: seq[string]
+    ids: ref HashSet[seq[string]]
+    idPath: seq[string]
     components*: Table[string, RenderProc[T]]
     statefulComponents*: Table[string, MountProc[T]]
-    mountedComponents*: ref Table[seq[string], RenderProc[T]]
+    mountedComponents: ref Table[seq[string], RenderProc[T]]
     data*: T
 
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
