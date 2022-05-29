@@ -59,6 +59,7 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
     new ctx.ids
     render(ctx, node)
     ctx.ids = nil
+    ctx.idPath = @[]
     return
   case node.kind:
   of JString:
