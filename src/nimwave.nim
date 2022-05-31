@@ -153,6 +153,6 @@ proc vbox[T](ctx: var Context[T], node: JsonNode) =
 proc initContext*[T](): Context[T] =
   result = Context[T]()
   new result.mountedComponents
-  result.components["hbox"] = hbox[T]
-  result.components["vbox"] = vbox[T]
+  result.components["nimwave.hbox"] = hbox[T]
+  result.components["nimwave.vbox"] = vbox[T]
 
