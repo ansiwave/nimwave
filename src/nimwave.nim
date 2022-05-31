@@ -1,6 +1,7 @@
 from illwave as iw import nil
 import tables, sets, json, unicode
 from nimwave/tui import nil
+from sequtils import nil
 
 type
   MountProc*[T] = proc (ctx: var Context[T], node: JsonNode): RenderProc[T]
@@ -58,6 +59,11 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
   if ctx.ids == nil:
     new ctx.ids
     render(ctx, node)
+    # unmount any components that weren't in the tree
+    for idPath in sequtils.toSeq(ctx.mountedComponents[].keys):
+      if idPath notin ctx.ids[]:
+        ctx.mountedComponents[].del(idPath)
+    # reset id fields
     ctx.ids = nil
     ctx.idPath = @[]
     return
