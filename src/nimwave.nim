@@ -48,6 +48,8 @@ proc runComponent[T](ctx: var Context[T], node: JsonNode) =
       raise newException(Exception, "'id' required for stateful component:\n" & $node)
     let m = ctx.statefulComponents[cmd]
     let f = m(ctx, node)
+    if f == nil:
+      raise newException(Exception, "Stateful component did not return a render proc: " & cmd)
     ctx.mountedComponents[idPath] = f
     f(ctx, node)
   else:
