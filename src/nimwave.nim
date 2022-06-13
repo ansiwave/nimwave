@@ -125,7 +125,7 @@ proc box[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
         x += actualWidth
         remainingWidth -= actualWidth
         remainingChildren -= 1
-        maxHeight = max(maxHeight, iw.height(childContext.tb))
+        maxHeight = max(maxHeight, iw.height(childContext.tb)+(yStart*2))
       ctx = slice(ctx, 0, 0, x+xStart, maxHeight)
     of Vertical:
       var
@@ -141,7 +141,7 @@ proc box[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
         y += actualHeight
         remainingHeight -= actualHeight
         remainingChildren -= 1
-        maxWidth = max(maxWidth, iw.width(childContext.tb))
+        maxWidth = max(maxWidth, iw.width(childContext.tb)+(xStart*2))
       ctx = slice(ctx, 0, 0, maxWidth, y+yStart)
     else:
       raise newException(Exception, "Invalid direction: " & node["direction"].str)
