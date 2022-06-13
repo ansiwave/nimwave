@@ -143,8 +143,6 @@ proc box[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
         remainingChildren -= 1
         maxWidth = max(maxWidth, iw.width(childContext.tb)+(xStart*2))
       ctx = slice(ctx, 0, 0, maxWidth, y+yStart)
-    else:
-      raise newException(Exception, "Invalid direction: " & node["direction"].str)
   if "border" in node:
     case node["border"].str:
     of "single":
