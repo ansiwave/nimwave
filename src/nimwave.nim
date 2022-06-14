@@ -150,10 +150,10 @@ proc renderBox[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
     of "double":
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
 
-proc renderHbox[T](ctx: var Context[T], node: JsonNode) =
+proc renderHbox*[T](ctx: var Context[T], node: JsonNode) =
   renderBox(ctx, node, Horizontal)
 
-proc renderVbox[T](ctx: var Context[T], node: JsonNode) =
+proc renderVbox*[T](ctx: var Context[T], node: JsonNode) =
   renderBox(ctx, node, Vertical)
 
 type
