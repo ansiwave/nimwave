@@ -23,7 +23,7 @@ proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple
   result = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, bounds)
 
-proc runComponent[T](ctx: var Context[T], node: JsonNode) =
+proc renderComponent[T](ctx: var Context[T], node: JsonNode) =
   if "type" notin node:
     raise newException(Exception, "'type' required:\n" & $node)
   let cmd = node["type"].str
@@ -77,7 +77,7 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
     else:
       tui.write(ctx.tb, 0, 0, node.str)
   of JObject:
-    runComponent(ctx, node)
+    renderComponent(ctx, node)
   of JArray:
     for elem in node.elems:
       render(ctx, elem)
@@ -99,7 +99,7 @@ type
   Direction = enum
     Vertical, Horizontal,
 
-proc box[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
+proc renderBox[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
   var
     xStart = 0
     yStart = 0
@@ -150,15 +150,15 @@ proc box[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
     of "double":
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
 
-proc hbox[T](ctx: var Context[T], node: JsonNode) =
-  box(ctx, node, Horizontal)
+proc renderHbox[T](ctx: var Context[T], node: JsonNode) =
+  renderBox(ctx, node, Horizontal)
 
-proc vbox[T](ctx: var Context[T], node: JsonNode) =
-  box(ctx, node, Vertical)
+proc renderVbox[T](ctx: var Context[T], node: JsonNode) =
+  renderBox(ctx, node, Vertical)
 
 proc initContext*[T](): Context[T] =
   result = Context[T]()
   new result.mountedComponents
-  result.components["nimwave.hbox"] = hbox[T]
-  result.components["nimwave.vbox"] = vbox[T]
+  result.components["nimwave.hbox"] = renderHbox[T]
+  result.components["nimwave.vbox"] = renderVbox[T]
 
