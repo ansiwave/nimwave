@@ -84,6 +84,9 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
   else:
     raise newException(Exception, "Invalid value:\n" & $node)
 
+proc render*[T](ctx: var Context[T], text: string) =
+  render(ctx, % text)
+
 proc flatten(nodes: seq[JsonNode], flatNodes: var seq[JsonNode]) =
   for node in nodes:
     if node.kind == JArray:
