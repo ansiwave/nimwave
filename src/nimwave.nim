@@ -153,10 +153,10 @@ proc renderBox[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
     of "double":
       iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
 
-proc renderHbox*[T](ctx: var Context[T], node: JsonNode) =
+proc renderHBox*[T](ctx: var Context[T], node: JsonNode) =
   renderBox(ctx, node, Horizontal)
 
-proc renderVbox*[T](ctx: var Context[T], node: JsonNode) =
+proc renderVBox*[T](ctx: var Context[T], node: JsonNode) =
   renderBox(ctx, node, Vertical)
 
 type
@@ -282,7 +282,7 @@ proc mountText*[T](ctx: var Context[T], node: JsonNode, state: ref TextState): R
 proc initContext*[T](): Context[T] =
   result = Context[T]()
   new result.mountedComponents
-  result.components["nimwave.hbox"] = renderHbox[T]
-  result.components["nimwave.vbox"] = renderVbox[T]
+  result.components["nimwave.hbox"] = renderHBox[T]
+  result.components["nimwave.vbox"] = renderVBox[T]
   result.statefulComponents["nimwave.scroll"] = mountScroll[T]
 
