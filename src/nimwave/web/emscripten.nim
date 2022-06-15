@@ -34,6 +34,8 @@ proc nimwave_get_scroll_top(selector: cstring): cint {.importc.}
 proc nimwave_open_new_tab(url: cstring) {.importc.}
 proc nimwave_get_hash(): cstring {.importc.}
 proc nimwave_set_hash(hash: cstring) {.importc.}
+proc nimwave_insert(selector: cstring, position: cstring, html: cstring): cint {.importc.}
+proc nimwave_remove(selector: cstring): cint {.importc.}
 proc free(p: pointer) {.importc.}
 
 {.compile: "nimwave_emscripten.c".}
@@ -80,3 +82,9 @@ proc getHash*(): string =
 
 proc setHash*(hash: string) =
   nimwave_set_hash(hash)
+
+proc insertHtml*(selector: string, position: string, html: string): bool =
+  1 == nimwave_insert(selector, position, html)
+
+proc removeHtml*(selector: string): bool =
+  1 == nimwave_remove(selector)

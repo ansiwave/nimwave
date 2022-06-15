@@ -80,3 +80,17 @@ EM_JS(char*, nimwave_get_hash, (), {
 EM_JS(void, nimwave_set_hash, (const char* hash), {
   window.location.hash = UTF8ToString(hash);
 });
+
+EM_JS(int, nimwave_insert, (const char* selector, const char* position, const char* html), {
+  var elem = document.querySelector(UTF8ToString(selector));
+  if (!elem) return 0;
+  elem.insertAdjacentHTML(UTF8ToString(position), UTF8ToString(html));
+  return 1;
+});
+
+EM_JS(int, nimwave_remove, (const char* selector), {
+  var elem = document.querySelector(UTF8ToString(selector));
+  if (!elem) return 0;
+  elem.remove();
+  return 1;
+});
