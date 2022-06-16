@@ -7,7 +7,6 @@ from ./tui/termtools/runewidth import nil
 
 type
   Options* = object
-    selector*: string
     padding*: float
     fontWidth*: float
     fontHeight*: float
@@ -149,7 +148,7 @@ proc bgColorToString*(ch: iw.TerminalChar): string =
   let (r, g, b, a) = vec
   "background-color: rgba($1, $2, $3, $4);".format(r, g, b, a)
 
-proc charToHtml(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options): string =
+proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options): string =
   if cast[uint32](ch.ch) == 0:
     return ""
   let
@@ -172,7 +171,7 @@ proc charToHtml(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Opti
 proc toLine(innerHtml: string, y: int): string =
   "<div class='row$1'>$2</div>".format(y, innerHtml)
 
-proc toHtml(tb: iw.TerminalBuffer, opts: Options): string =
+proc toHtml*(tb: iw.TerminalBuffer, opts: Options): string =
   let
     termWidth = iw.width(tb)
     termHeight = iw.height(tb)
@@ -180,7 +179,7 @@ proc toHtml(tb: iw.TerminalBuffer, opts: Options): string =
   for y in 0 ..< termHeight:
     var line = ""
     for x in 0 ..< termWidth:
-      line &= charToHtml(tb[x, y], (x, y), opts)
+      line &= toHtml(tb[x, y], (x, y), opts)
     result &= toLine(line, y)
 
 type
@@ -211,20 +210,20 @@ proc diff(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer): seq[Action] =
       elif tb[x, y] != prevTb[x, y]:
         result.add(Action(kind: Update, ch: tb[x, y], x: x, y: y))
 
-proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, opts: Options) =
+proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, selector: string, opts: Options) =
   if prevTb.buf == nil:
     let html = toHtml(tb, opts)
-    emscripten.setInnerHtml(opts.selector, html)
+    emscripten.setInnerHtml(selector, html)
   elif prevTb != tb:
     for action in diff(tb, prevTb):
       case action.kind:
       of Insert:
-        if not emscripten.insertHtml(opts.selector & " .row" & $action.y, "beforeend", charToHtml(action.ch, (action.x, action.y), opts)):
-          doAssert emscripten.insertHtml(opts.selector, "beforeend", toLine("", action.y)), "Can't insert in " & opts.selector
-          doAssert emscripten.insertHtml(opts.selector &  " .row" & $action.y, "beforeend", charToHtml(action.ch, (action.x, action.y), opts)), "Can't insert before end of " & opts.selector &  ".row" & $action.y
+        if not emscripten.insertHtml(selector & " .row" & $action.y, "beforeend", toHtml(action.ch, (action.x, action.y), opts)):
+          doAssert emscripten.insertHtml(selector, "beforeend", toLine("", action.y)), "Can't insert in " & selector
+          doAssert emscripten.insertHtml(selector &  " .row" & $action.y, "beforeend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert before end of " & selector &  ".row" & $action.y
       of Update:
-        doAssert emscripten.insertHtml(opts.selector & " .row" & $action.y & " .col" & $action.x, "afterend", charToHtml(action.ch, (action.x, action.y), opts)), "Can't insert after " & opts.selector & " .row" & $action.y & " .col" & $action.x
-        doAssert emscripten.removeHtml(opts.selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & opts.selector & " .row" & $action.y & " .col" & $action.x
+        doAssert emscripten.insertHtml(selector & " .row" & $action.y & " .col" & $action.x, "afterend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert after " & selector & " .row" & $action.y & " .col" & $action.x
+        doAssert emscripten.removeHtml(selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & selector & " .row" & $action.y & " .col" & $action.x
       of Remove:
-        doAssert emscripten.removeHtml(opts.selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & opts.selector & " .row" & $action.y & " .col" & $action.x
+        doAssert emscripten.removeHtml(selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & selector & " .row" & $action.y & " .col" & $action.x
 
