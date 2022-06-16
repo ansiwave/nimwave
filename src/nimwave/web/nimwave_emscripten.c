@@ -46,6 +46,12 @@ EM_JS(void, nimwave_set_display, (const char* selector, const char* display), {
   elem.style.display = UTF8ToString(display);
 });
 
+EM_JS(void, nimwave_set_style, (const char* selector, const char* style), {
+  var elem = document.querySelector(UTF8ToString(selector));
+  if (!elem) return;
+  elem.style.cssText = UTF8ToString(style);
+});
+
 EM_JS(void, nimwave_focus, (const char* selector), {
   var elem = document.querySelector(UTF8ToString(selector));
   if (!elem) return;

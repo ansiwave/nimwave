@@ -28,6 +28,7 @@ proc nimwave_set_size(selector: cstring, width: cint, height: cint) {.importc.}
 proc nimwave_get_client_width(): cint {.importc.}
 proc nimwave_get_client_height(): cint {.importc.}
 proc nimwave_set_display(selector: cstring, display: cstring) {.importc.}
+proc nimwave_set_style(selector: cstring, style: cstring) {.importc.}
 proc nimwave_focus(selector: cstring) {.importc.}
 proc nimwave_scroll_down(selector: cstring) {.importc.}
 proc nimwave_get_scroll_top(selector: cstring): cint {.importc.}
@@ -62,6 +63,9 @@ proc getClientHeight*(): int32 =
 
 proc setDisplay*(selector: string, display: string) =
   nimwave_set_display(selector, display)
+
+proc setStyle*(selector: string, style: string) =
+  nimwave_set_style(selector, style)
 
 proc focus*(selector: string) =
   nimwave_focus(selector)
