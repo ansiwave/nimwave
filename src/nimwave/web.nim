@@ -9,6 +9,9 @@ type
   Options* = object
     normalWidthStyle*: string
     doubleWidthStyle*: string
+    mouseDownFn*: string
+    mouseUpFn*: string
+    mouseMoveFn*: string
 
 const
   # dark colors
@@ -160,7 +163,14 @@ proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options
         opts.normalWidthStyle
     mouseEvents =
       if position != (-1, -1):
-        "onmousedown='mouseDown($1, $2)' onmouseup='mouseUp($1, $2)' onmousemove='mouseMove($1, $2)'".format(position.x, position.y)
+        var attrs: seq[string]
+        if opts.mouseDownFn != "":
+          attrs.add("onmousedown='$1($2, $3)'".format(opts.mouseDownFn, position.x, position.y))
+        if opts.mouseUpFn != "":
+          attrs.add("onmouseup='$1($2, $3)'".format(opts.mouseUpFn, position.x, position.y))
+        if opts.mouseMoveFn != "":
+          attrs.add("onmousemove='$1($2, $3)'".format(opts.mouseMoveFn, position.x, position.y))
+        strutils.join(attrs, " ")
       else:
         ""
   return "<span class='col$1' style='$2 $3 $4' $5>$6</span>".format(position.x, fg, bg, additionalStyles, mouseEvents, $ch.ch)
