@@ -220,11 +220,11 @@ proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, opts: Options) =
       case action.kind:
       of Insert:
         if not emscripten.insertHtml(opts.selector & " .row" & $action.y, "beforeend", charToHtml(action.ch, (action.x, action.y), opts)):
-          doAssert emscripten.insertHtml(opts.selector, "beforeend", toLine("", action.y))
-          doAssert emscripten.insertHtml(opts.selector &  ".row" & $action.y, "beforeend", charToHtml(action.ch, (action.x, action.y), opts)):
+          doAssert emscripten.insertHtml(opts.selector, "beforeend", toLine("", action.y)), "Can't insert in " & opts.selector
+          doAssert emscripten.insertHtml(opts.selector &  " .row" & $action.y, "beforeend", charToHtml(action.ch, (action.x, action.y), opts)), "Can't insert before end of " & opts.selector &  ".row" & $action.y
       of Update:
-        doAssert emscripten.insertHtml(opts.selector & " .row" & $action.y & " .col" & $action.x, "afterend", charToHtml(action.ch, (action.x, action.y), opts))
-        doAssert emscripten.removeHtml(opts.selector & " .row" & $action.y & " .col" & $action.x)
+        doAssert emscripten.insertHtml(opts.selector & " .row" & $action.y & " .col" & $action.x, "afterend", charToHtml(action.ch, (action.x, action.y), opts)), "Can't insert after " & opts.selector & " .row" & $action.y & " .col" & $action.x
+        doAssert emscripten.removeHtml(opts.selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & opts.selector & " .row" & $action.y & " .col" & $action.x
       of Remove:
-        doAssert emscripten.removeHtml(opts.selector & " .row" & $action.y & " .col" & $action.x)
+        doAssert emscripten.removeHtml(opts.selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & opts.selector & " .row" & $action.y & " .col" & $action.x
 
