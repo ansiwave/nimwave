@@ -87,16 +87,36 @@ EM_JS(void, nimwave_set_hash, (const char* hash), {
   window.location.hash = UTF8ToString(hash);
 });
 
-EM_JS(int, nimwave_insert, (const char* selector, const char* position, const char* html), {
-  var elem = document.querySelector(UTF8ToString(selector));
-  if (!elem) return 0;
-  elem.insertAdjacentHTML(UTF8ToString(position), UTF8ToString(html));
-  return 1;
-});
-
-EM_JS(int, nimwave_remove, (const char* selector), {
-  var elem = document.querySelector(UTF8ToString(selector));
-  if (!elem) return 0;
-  elem.remove();
-  return 1;
+EM_JS(void, nimwave_update_grid, (const char* selector, const char* actions_json), {
+  var contentSel = UTF8ToString(selector);
+  var actions = JSON.parse(UTF8ToString(actions_json));
+  var content = document.querySelector(contentSel);
+  if (!content) return;
+  for (var i in actions)
+  {
+    var action = actions[i];
+    switch (action["kind"])
+    {
+      case "Insert":
+        var sel = contentSel + " .row" + action["y"];
+        var row = document.querySelector(sel);
+        if (!row) {
+          content.insertAdjacentHTML("beforeend", "<div class='row" + action["y"] + "'></div>");
+        }
+        row = document.querySelector(sel);
+        row.insertAdjacentHTML("beforeend", action["html"]);
+        break;
+      case "Update":
+        var sel = contentSel + " .row" + action["y"] + " .col" + action["x"];
+        var block = document.querySelector(sel);
+        block.insertAdjacentHTML("afterend", action["html"]);
+        block.remove();
+        break;
+      case "Remove":
+        var sel = contentSel + " .row" + action["y"] + " .col" + action["x"];
+        var block = document.querySelector(sel);
+        block.remove();
+        break;
+    }
+  }
 });

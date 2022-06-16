@@ -1,6 +1,6 @@
 from illwave as iw import `[]`, `[]=`, `==`
 from strutils import format
-import tables, unicode
+import tables, unicode, json
 from terminal import nil
 from ./web/emscripten import nil
 from ./tui/termtools/runewidth import nil
@@ -165,9 +165,6 @@ proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options
         ""
   return "<span class='col$1' style='$2 $3 $4' $5>$6</span>".format(position.x, fg, bg, additionalStyles, mouseEvents, $ch.ch)
 
-proc toLine(innerHtml: string, y: int): string =
-  "<div class='row$1'>$2</div>".format(y, innerHtml)
-
 proc toHtml*(tb: iw.TerminalBuffer, opts: Options): string =
   let
     termWidth = iw.width(tb)
@@ -177,7 +174,7 @@ proc toHtml*(tb: iw.TerminalBuffer, opts: Options): string =
     var line = ""
     for x in 0 ..< termWidth:
       line &= toHtml(tb[x, y], (x, y), opts)
-    result &= toLine(line, y)
+    result &= "<div class='row$1'>$2</div>".format(y, line)
 
 type
   ActionKind = enum
@@ -185,7 +182,7 @@ type
   Action = object
     case kind: ActionKind
     of Insert, Update:
-      ch: iw.TerminalChar
+      html: string
     of Remove:
       discard
     x: int
@@ -197,33 +194,29 @@ proc getLineLen(tb: iw.TerminalBuffer, line: int): int =
   else:
     tb.buf[].chars[line].len
 
-proc diff(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer): seq[Action] =
+proc diff(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, opts: Options, limit: int, actions: var seq[Action]): bool =
   for y in 0 ..< max(tb.buf[].chars.len, prevTb.buf[].chars.len):
     for x in 0 ..< max(tb.getLineLen(y), prevTb.getLineLen(y)):
+      if actions.len > limit:
+        return false
       if y > prevTb.buf[].chars.len-1 or x > prevTb.buf[].chars[y].len-1:
-        result.add(Action(kind: Insert, ch: tb[x, y], x: x, y: y))
+        let html = toHtml(tb[x, y], (x, y), opts)
+        actions.add(Action(kind: Insert, html: html, x: x, y: y))
       elif y > tb.buf[].chars.len-1 or x > tb.buf[].chars[y].len-1:
-        result.add(Action(kind: Remove, x: x, y: y))
+        actions.add(Action(kind: Remove, x: x, y: y))
       elif tb[x, y] != prevTb[x, y]:
-        result.add(Action(kind: Update, ch: tb[x, y], x: x, y: y))
+        let html = toHtml(tb[x, y], (x, y), opts)
+        actions.add(Action(kind: Update, html: html, x: x, y: y))
+  true
 
 proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, selector: string, opts: Options) =
   if prevTb.buf == nil:
-    let html = toHtml(tb, opts)
-    emscripten.setInnerHtml(selector, html)
+    emscripten.setInnerHtml(selector, toHtml(tb, opts))
   elif prevTb != tb:
-    for action in diff(tb, prevTb):
-      case action.kind:
-      of Insert:
-        let sel = selector &  " .row" & $action.y
-        if not emscripten.insertHtml(sel, "beforeend", toHtml(action.ch, (action.x, action.y), opts)):
-          doAssert emscripten.insertHtml(selector, "beforeend", toLine("", action.y)), "Can't insert in " & selector
-        doAssert emscripten.insertHtml(sel, "beforeend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert before end of " & sel
-      of Update:
-        let sel = selector & " .row" & $action.y & " .col" & $action.x
-        doAssert emscripten.insertHtml(sel, "afterend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert after " & sel
-        doAssert emscripten.removeHtml(sel), "Can't remove " & sel
-      of Remove:
-        let sel = selector & " .row" & $action.y & " .col" & $action.x
-        doAssert emscripten.removeHtml(sel), "Can't remove " & sel
+    var actions: seq[Action]
+    # if the diff is too big, just replace it all because it'll be faster
+    if diff(tb, prevTb, opts, 100, actions):
+      emscripten.updateGrid(selector, $ (% actions))
+    else:
+      emscripten.setInnerHtml(selector, toHtml(tb, opts))
 
