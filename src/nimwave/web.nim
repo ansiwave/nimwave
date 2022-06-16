@@ -215,12 +215,15 @@ proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, selector: string
     for action in diff(tb, prevTb):
       case action.kind:
       of Insert:
-        if not emscripten.insertHtml(selector & " .row" & $action.y, "beforeend", toHtml(action.ch, (action.x, action.y), opts)):
+        let sel = selector &  " .row" & $action.y
+        if not emscripten.insertHtml(sel, "beforeend", toHtml(action.ch, (action.x, action.y), opts)):
           doAssert emscripten.insertHtml(selector, "beforeend", toLine("", action.y)), "Can't insert in " & selector
-          doAssert emscripten.insertHtml(selector &  " .row" & $action.y, "beforeend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert before end of " & selector &  ".row" & $action.y
+        doAssert emscripten.insertHtml(sel, "beforeend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert before end of " & sel
       of Update:
-        doAssert emscripten.insertHtml(selector & " .row" & $action.y & " .col" & $action.x, "afterend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert after " & selector & " .row" & $action.y & " .col" & $action.x
-        doAssert emscripten.removeHtml(selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & selector & " .row" & $action.y & " .col" & $action.x
+        let sel = selector & " .row" & $action.y & " .col" & $action.x
+        doAssert emscripten.insertHtml(sel, "afterend", toHtml(action.ch, (action.x, action.y), opts)), "Can't insert after " & sel
+        doAssert emscripten.removeHtml(sel), "Can't remove " & sel
       of Remove:
-        doAssert emscripten.removeHtml(selector & " .row" & $action.y & " .col" & $action.x), "Can't remove " & selector & " .row" & $action.y & " .col" & $action.x
+        let sel = selector & " .row" & $action.y & " .col" & $action.x
+        doAssert emscripten.removeHtml(sel), "Can't remove " & sel
 
