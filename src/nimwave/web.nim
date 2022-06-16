@@ -7,6 +7,7 @@ from ./tui/termtools/runewidth import nil
 
 type
   Options* = object
+    normalWidthStyle*: string
     doubleWidthStyle*: string
 
 const
@@ -156,7 +157,7 @@ proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options
       if runewidth.runeWidth(ch.ch) == 2:
         opts.doubleWidthStyle
       else:
-        ""
+        opts.normalWidthStyle
     mouseEvents =
       if position != (-1, -1):
         "onmousedown='mouseDown($1, $2)' onmouseup='mouseUp($1, $2)' onmousemove='mouseMove($1, $2)'".format(position.x, position.y)
