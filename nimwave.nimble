@@ -11,4 +11,4 @@ srcDir        = "src"
 
 requires "nim >= 1.6.4"
 requires "ansiutils >= 0.1.0"
-requires "illwave >= 0.4.0"
+requires "illwave >= 0.5.0"
