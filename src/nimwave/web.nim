@@ -7,9 +7,7 @@ from ./tui/termtools/runewidth import nil
 
 type
   Options* = object
-    padding*: float
-    fontWidth*: float
-    fontHeight*: float
+    doubleWidthStyle*: string
 
 const
   # dark colors
@@ -156,9 +154,7 @@ proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options
     bg = bgColorToString(ch)
     additionalStyles =
       if runewidth.runeWidth(ch.ch) == 2:
-        # add some padding because double width characters are a little bit narrower
-        # than two normal characters due to font differences
-        "display: inline-block; max-width: $1px; padding-left: $2px; padding-right: $2px;".format(opts.fontHeight, opts.padding)
+        opts.doubleWidthStyle
       else:
         ""
     mouseEvents =
