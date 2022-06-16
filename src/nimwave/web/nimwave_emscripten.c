@@ -87,11 +87,11 @@ EM_JS(void, nimwave_set_hash, (const char* hash), {
   window.location.hash = UTF8ToString(hash);
 });
 
-EM_JS(void, nimwave_update_grid, (const char* selector, const char* actions_json), {
+EM_JS(int, nimwave_update_grid, (const char* selector, const char* actions_json), {
   var contentSel = UTF8ToString(selector);
   var actions = JSON.parse(UTF8ToString(actions_json));
   var content = document.querySelector(contentSel);
-  if (!content) return;
+  if (!content) return 0;
   for (var i in actions)
   {
     var action = actions[i];
@@ -104,19 +104,23 @@ EM_JS(void, nimwave_update_grid, (const char* selector, const char* actions_json
           content.insertAdjacentHTML("beforeend", "<div class='row" + action["y"] + "'></div>");
         }
         row = document.querySelector(sel);
+        if (!row) return 0;
         row.insertAdjacentHTML("beforeend", action["html"]);
         break;
       case "Update":
         var sel = contentSel + " .row" + action["y"] + " .col" + action["x"];
         var block = document.querySelector(sel);
+        if (!block) return 0;
         block.insertAdjacentHTML("afterend", action["html"]);
         block.remove();
         break;
       case "Remove":
         var sel = contentSel + " .row" + action["y"] + " .col" + action["x"];
         var block = document.querySelector(sel);
+        if (!block) return 0;
         block.remove();
         break;
     }
   }
+  return 1;
 });

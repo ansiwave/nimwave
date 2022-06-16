@@ -35,7 +35,7 @@ proc nimwave_get_scroll_top(selector: cstring): cint {.importc.}
 proc nimwave_open_new_tab(url: cstring) {.importc.}
 proc nimwave_get_hash(): cstring {.importc.}
 proc nimwave_set_hash(hash: cstring) {.importc.}
-proc nimwave_update_grid(selector: cstring, actions_json: cstring) {.importc.}
+proc nimwave_update_grid(selector: cstring, actions_json: cstring): cint {.importc.}
 proc free(p: pointer) {.importc.}
 
 {.compile: "nimwave_emscripten.c".}
@@ -86,5 +86,5 @@ proc getHash*(): string =
 proc setHash*(hash: string) =
   nimwave_set_hash(hash)
 
-proc updateGrid*(selector: string, actionsJson: string) =
-  nimwave_update_grid(selector, actionsJson)
+proc updateGrid*(selector: string, actionsJson: string): bool =
+  1 == nimwave_update_grid(selector, actionsJson)

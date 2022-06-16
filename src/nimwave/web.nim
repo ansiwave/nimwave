@@ -215,8 +215,6 @@ proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, selector: string
   elif prevTb != tb:
     var actions: seq[Action]
     # if the diff is too big, just replace it all because it'll be faster
-    if diff(tb, prevTb, opts, 100, actions):
-      emscripten.updateGrid(selector, $ (% actions))
-    else:
+    if not diff(tb, prevTb, opts, 300, actions) or not emscripten.updateGrid(selector, $ (% actions)):
       emscripten.setInnerHtml(selector, toHtml(tb, opts))
 
