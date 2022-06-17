@@ -2,6 +2,7 @@ from illwave as iw import nil
 import tables, sets, json, unicode
 from nimwave/tui import nil
 from sequtils import nil
+from ansiutils/codes import nil
 
 type
   MountProc*[T] = proc (ctx: var Context[T], node: JsonNode): RenderProc[T]
@@ -71,7 +72,7 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
     return
   case node.kind:
   of JString:
-    ctx = slice(ctx, 0, 0, node.str.runeLen, 1)
+    ctx = slice(ctx, 0, 0, codes.stripCodes(node.str).runeLen, 1)
     when defined(release):
       tui.writeMaybe(ctx.tb, 0, 0, node.str)
     else:
