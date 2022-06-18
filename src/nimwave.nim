@@ -73,10 +73,13 @@ proc render*[T](ctx: var Context[T], node: JsonNode) =
   case node.kind:
   of JString:
     ctx = slice(ctx, 0, 0, codes.stripCodes(node.str).runeLen, 1)
-    when defined(release):
-      tui.writeMaybe(ctx.tb, 0, 0, node.str)
-    else:
+    try:
       tui.write(ctx.tb, 0, 0, node.str)
+    except Exception as ex:
+      when defined(release):
+        discard
+      else:
+        raise ex
   of JObject:
     renderComponent(ctx, node)
   of JArray:

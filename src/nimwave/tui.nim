@@ -99,12 +99,6 @@ proc write*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
   for code in esccodes:
     applyCode(tb, code)
 
-proc writeMaybe*(tb: var iw.TerminalBuffer, x, y: int, s: string) =
-  try:
-    write(tb, x, y, s)
-  except Exception as ex:
-    discard
-
 proc write*(lines: seq[ref string]): seq[seq[iw.TerminalChar]] =
   var tb = iw.initTerminalBuffer(0, 0)
   var esccodes: seq[string]
