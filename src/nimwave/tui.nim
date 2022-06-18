@@ -121,9 +121,3 @@ proc write*(lines: seq[ref string]): seq[seq[iw.TerminalChar]] =
       esccodes = @[]
     result.add chars
 
-proc writeMaybe*(lines: seq[ref string]): seq[seq[iw.TerminalChar]] =
-  try:
-    result = write(lines)
-  except Exception as ex:
-    discard
-
