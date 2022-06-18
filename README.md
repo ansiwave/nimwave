@@ -8,6 +8,8 @@ With NIMWAVE, you can build TUI programs for the terminal, the desktop (via Open
 
 The best way to begin is to clone [the starter project](https://github.com/ansiwave/nimwave_starter) and run the commands in its README.
 
+For a much more involved example project, see [ANSIWAVE BBS](https://github.com/ansiwave/ansiwave), along with its [web](https://github.com/ansiwave/ansiweb) and [desktop](https://github.com/ansiwave/ansigui) versions. It is the project that NIMWAVE was extracted from.
+
 ## Documentation
 
 NIMWAVE provides a convenient way to define your UI using Nim's `json` module. Here's a simple example that renders a few lines of text surrounded by a box:
@@ -46,7 +48,7 @@ nimwave.render(ctx, %* {
 })
 ```
 
-This is a somewhat pointless example single we're just wrapping the vbox in a component, but you get the idea. All you need to do is make a proc with the right signature, add it to `ctx.components`, and immediately start using it.
+This is a somewhat pointless example since we're just wrapping the vbox in a component, but you get the idea. All you need to do is make a proc with the right signature, add it to `ctx.components`, and immediately start using it.
 
 ### Resizing components
 
