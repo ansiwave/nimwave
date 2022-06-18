@@ -64,6 +64,30 @@ proc renderLines(ctx: var nimwave.Context[State], node: JsonNode) =
 
 Here, the component is retaining the width given to it by the parent, but it is resizing its height to be the number of lines of text plus 2 (for the border).
 
+### Adding styling
+
+All low level render operations are dona via [illwave](https://github.com/ansiwave/illwave). You can manipulate individual cells in the `TerminalBuffer` like this:
+
+```nim
+# change the foreground/background color
+ctx.tb[0, 0].fg = iw.fgBlue
+ctx.tb[0, 0].bg = iw.bgYellow
+
+# change the character
+ctx.tb[0, 0].ch = "Z".toRunes[0]
+```
+
+The coordinates here are relative, so `0, 0` will be the top left corner of the component you are in, not the top left corner of the entire terminal.
+
+Also, all strings passed to `nimwave.render` may include ANSI escape codes directly:
+
+```nim
+nimwave.render(ctx, %* {
+  "type": "nimwave.hbox",
+  "children": ["\e[32;43mHello, world!\e[0m"],
+})
+```
+
 ### Stateful components
 
 Some components require local state. For example, let's make a button that increments a number every time it is clicked. Although not ideal, an easy way we could do this is with global state:
