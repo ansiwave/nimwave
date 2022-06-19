@@ -123,6 +123,7 @@ proc renderBox[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
         x = xStart
         remainingWidth = iw.width(ctx.tb).int
         remainingChildren = children.len
+        maxHeight = iw.height(ctx.tb)
       for child in children:
         let initialWidth = int(remainingWidth / remainingChildren)
         var childContext = slice(ctx, x, yStart, max(0, initialWidth - (xStart * 2)), max(0, iw.height(ctx.tb) - (yStart * 2)))
@@ -131,12 +132,14 @@ proc renderBox[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
         x += actualWidth
         remainingWidth -= actualWidth
         remainingChildren -= 1
-      ctx = slice(ctx, 0, 0, x+xStart, iw.height(ctx.tb))
+        maxHeight = max(maxHeight, iw.height(childContext.tb)+(yStart*2))
+      ctx = slice(ctx, 0, 0, x+xStart, maxHeight)
     of Vertical:
       var
         y = yStart
         remainingHeight = iw.height(ctx.tb).int
         remainingChildren = children.len
+        maxWidth = iw.width(ctx.tb)
       for child in children:
         let initialHeight = int(remainingHeight / remainingChildren)
         var childContext = slice(ctx, xStart, y, max(0, iw.width(ctx.tb) - (xStart * 2)), max(0, initialHeight - (yStart * 2)))
@@ -145,7 +148,8 @@ proc renderBox[T](ctx: var Context[T], node: JsonNode, direction: Direction) =
         y += actualHeight
         remainingHeight -= actualHeight
         remainingChildren -= 1
-      ctx = slice(ctx, 0, 0, iw.width(ctx.tb), y+yStart)
+        maxWidth = max(maxWidth, iw.width(childContext.tb)+(xStart*2))
+      ctx = slice(ctx, 0, 0, maxWidth, y+yStart)
   if "border" in node:
     case node["border"].str:
     of "single":
