@@ -8,7 +8,7 @@ With NIMWAVE, you can build TUI programs for the terminal, the desktop (via Open
 
 The best way to begin is to clone [the starter project](https://github.com/ansiwave/nimwave_starter) and run the commands in its README.
 
-For a much more involved example project, see [ANSIWAVE BBS](https://github.com/ansiwave/ansiwave), along with its [web](https://github.com/ansiwave/ansiweb) and [desktop](https://github.com/ansiwave/ansigui) versions. It is the project that NIMWAVE was extracted from.
+For a much more involved example project, see [ANSIWAVE BBS](https://github.com/ansiwave/ansiwave_bbs). It is the project that NIMWAVE was extracted from.
 
 ## Documentation
 
