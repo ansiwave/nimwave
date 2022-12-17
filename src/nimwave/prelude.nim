@@ -46,17 +46,6 @@ proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
   else:
     return cast[T](ctx.mountedComponents[ctx.idPath])
 
-# text
-
-type
-  Text* = ref object of nimwave.Component
-    content*: string
-
-method render*(node: Text, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Component(node), ctx)
-  ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.content).runeLen, 1)
-  tui.write(ctx.tb, 0, 0, node.content)
-
 # box
 
 type
@@ -136,37 +125,116 @@ type
 
 method render*(node: Scroll, ctx: var nimwave.Context[State]) =
   procCall render(nimwave.Component(node), ctx)
-  let
-    changeScrollX = node.changeScrollX
-    changeScrollY = node.changeScrollY
-    mNode = getMounted(node, ctx)
+  let mnode = getMounted(node, ctx)
   let
     width = iw.width(ctx.tb)
     height = iw.height(ctx.tb)
     boundsWidth =
-      if mNode.growX:
+      if mnode.growX:
         -1
       else:
         width
     boundsHeight =
-      if mNode.growY:
+      if mnode.growY:
         -1
       else:
         height
     bounds = (0, 0, boundsWidth, boundsHeight)
-  var ctx = nimwave.slice(ctx, mNode.scrollX, mNode.scrollY, width, height, bounds)
-  render(mNode.child, ctx)
-  if changeScrollX != 0:
-    mNode.scrollX += changeScrollX
+  var ctx = nimwave.slice(ctx, mnode.scrollX, mnode.scrollY, width, height, bounds)
+  render(node.child, ctx)
+  if node.changeScrollX != 0:
+    mnode.scrollX += node.changeScrollX
     let minX = width - iw.width(ctx.tb)
     if minX < 0:
-      mNode.scrollX = mNode.scrollX.clamp(minX, 0)
+      mnode.scrollX = mnode.scrollX.clamp(minX, 0)
     else:
-      mNode.scrollX = 0
-  if changeScrollY != 0:
-    mNode.scrollY += changeScrollY
+      mnode.scrollX = 0
+  if node.changeScrollY != 0:
+    mnode.scrollY += node.changeScrollY
     let minY = height - iw.height(ctx.tb)
     if minY < 0:
-      mNode.scrollY = mNode.scrollY.clamp(minY, 0)
+      mnode.scrollY = mnode.scrollY.clamp(minY, 0)
     else:
-      mNode.scrollY = 0
+      mnode.scrollY = 0
+
+# text
+
+type
+  TextKind* {.pure.} = enum
+    Read,
+    Edit,
+  Text* = ref object of nimwave.Component
+    text*: string
+    case kind*: TextKind
+    of Read:
+      discard
+    of Edit:
+      enabled*: bool
+      cursorX*: int
+      key*: iw.Key
+      chars*: seq[Rune]
+      scroll*: Scroll
+
+method render*(node: Text, ctx: var nimwave.Context[State]) =
+  procCall render(nimwave.Component(node), ctx)
+  case node.kind:
+  of Read:
+    ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.text).runeLen, 1)
+    tui.write(ctx.tb, 0, 0, node.text)
+  of Edit:
+    let mnode = getMounted(node, ctx)
+    if node.enabled:
+      case node.key:
+      of iw.Key.Backspace:
+        if mnode.cursorX > 0:
+          let
+            line = mnode.text.toRunes
+            x = mnode.cursorX - 1
+            newLine = $line[0 ..< x] & $line[x + 1 ..< line.len]
+          mnode.text = newLine
+          mnode.cursorX -= 1
+      of iw.Key.Delete:
+        if mnode.cursorX < mnode.text.runeLen:
+          let
+            line = mnode.text.toRunes
+            newLine = $line[0 ..< mnode.cursorX] & $line[mnode.cursorX + 1 ..< line.len]
+          mnode.text = newLine
+      of iw.Key.Left:
+        mnode.cursorX -= 1
+        if mnode.cursorX < 0:
+          mnode.cursorX = 0
+      of iw.Key.Right:
+        mnode.cursorX += 1
+        if mnode.cursorX > mnode.text.runeLen:
+          mnode.cursorX = mnode.text.runeLen
+      of iw.Key.Home:
+        mnode.cursorX = 0
+      of iw.Key.End:
+        mnode.cursorX = mnode.text.runeLen
+      else:
+        discard
+      for ch in node.chars:
+        let
+          line = mnode.text.toRunes
+          before = line[0 ..< mnode.cursorX]
+          after = line[mnode.cursorX ..< line.len]
+        mnode.text = $before & $ch & $after
+        mnode.cursorX += 1
+    # create scroll component if it doesn't exist
+    if mnode.scroll == nil:
+      mnode.scroll = Scroll(id: "text-scroll")
+    mnode.scroll.child = Text(text: mnode.text)
+    # update scroll position
+    let cursorXDiff = mnode.scroll.scrollX + mnode.cursorX
+    if cursorXDiff >= iw.width(ctx.tb) - 1:
+      mnode.scroll.scrollX = iw.width(ctx.tb) - 1 - mnode.cursorX
+    elif cursorXDiff < 0:
+      mnode.scroll.scrollX = 0 - mnode.cursorX
+    # render
+    ctx = nimwave.slice(ctx, 0, 0, iw.width(ctx.tb), 1)
+    render(mnode.scroll, ctx)
+    if node.enabled:
+      var cell = ctx.tb[mnode.scroll.scrollX + mnode.cursorX, 0]
+      cell.bg = iw.bgYellow
+      cell.fg = iw.fgBlack
+      ctx.tb[mnode.scroll.scrollX + mnode.cursorX, 0] = cell
