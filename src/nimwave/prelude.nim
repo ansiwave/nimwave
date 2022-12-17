@@ -6,27 +6,27 @@ from sets import nil
 from nimwave/tui import nil
 from illwave as iw import nil
 
-method mount*(node: nimwave.Component, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
+method mount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
   discard
 
-method render*(node: nimwave.Component, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
+method render*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
   if node.id != "":
     ctx.idPath.add(node.id)
 
-method unmount*(node: nimwave.Component, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
+method unmount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
   discard
 
-proc renderRoot*(node: nimwave.Component, ctx: var nimwave.Context[State]) =
+proc renderRoot*(node: nimwave.Node, ctx: var nimwave.Context[State]) =
   if ctx.tb.buf == nil:
     raise newException(Exception, "The `tb` field must be set in the context object")
   new ctx.ids
   render(node, ctx)
   # unmount any components that weren't in the tree
-  for idPath in sequtils.toSeq(ctx.mountedComponents[].keys):
+  for idPath in sequtils.toSeq(ctx.mountedNodes[].keys):
     if not sets.contains(ctx.ids[], idPath):
-      let comp = ctx.mountedComponents[idPath]
+      let comp = ctx.mountedNodes[idPath]
       unmount(comp, ctx)
-      ctx.mountedComponents[].del(idPath)
+      ctx.mountedNodes[].del(idPath)
   # reset id fields
   ctx.ids = nil
   ctx.idPath = @[]
@@ -35,21 +35,21 @@ proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
   if node.id == "":
     raise newException(Exception, "Node has no id")
   elif ctx.idPath.len == 0 or ctx.idPath[^1] != node.id:
-    raise newException(Exception, "You must call the base method first! You can do it like this:\nprocCall render(nimwave.Component(node), ctx)")
+    raise newException(Exception, "You must call the base method first! You can do it like this:\nprocCall render(nimwave.Node(node), ctx)")
   if sets.contains(ctx.ids[], ctx.idPath):
     raise newException(Exception, "id already exists somewhere else in the tree: " & $ctx.idPath)
   sets.incl(ctx.ids[], ctx.idPath)
-  if not tables.contains(ctx.mountedComponents, ctx.idPath):
+  if not tables.contains(ctx.mountedNodes, ctx.idPath):
     mount(node, ctx)
-    ctx.mountedComponents[ctx.idPath] = node
+    ctx.mountedNodes[ctx.idPath] = node
     return node
   else:
-    return cast[T](ctx.mountedComponents[ctx.idPath])
+    return cast[T](ctx.mountedNodes[ctx.idPath])
 
 # box
 
 method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Component(node), ctx)
+  procCall render(nimwave.Node(node), ctx)
   var
     xStart = 0
     yStart = 0
@@ -104,7 +104,7 @@ method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
 # scroll
 
 method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Component(node), ctx)
+  procCall render(nimwave.Node(node), ctx)
   let mnode = getMounted(node, ctx)
   let
     width = iw.width(ctx.tb)
@@ -140,7 +140,7 @@ method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
 # text
 
 method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Component(node), ctx)
+  procCall render(nimwave.Node(node), ctx)
   case node.kind:
   of nimwave.TextKind.Read:
     ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.text).runeLen, 1)
