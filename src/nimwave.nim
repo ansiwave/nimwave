@@ -12,6 +12,36 @@ type
     data*: T
   Component* = ref object of RootObj
     id*: string
+  Direction* {.pure.} = enum
+    Vertical, Horizontal,
+  Border* {.pure.} = enum
+    None, Single, Double, Hidden,
+  Box* = ref object of Component
+    direction*: Direction
+    border*: Border
+    children*: seq[Component]
+  Scroll* = ref object of Component
+    scrollX*: int
+    scrollY*: int
+    changeScrollX*: int
+    changeScrollY*: int
+    growX*: bool
+    growY*: bool
+    child*: Component
+  TextKind* {.pure.} = enum
+    Read,
+    Edit,
+  Text* = ref object of Component
+    text*: string
+    case kind*: TextKind
+    of Read:
+      discard
+    of Edit:
+      enabled*: bool
+      cursorX*: int
+      key*: iw.Key
+      chars*: seq[Rune]
+      scroll*: Scroll
 
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
   result = ctx

@@ -48,30 +48,20 @@ proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
 
 # box
 
-type
-  Direction* {.pure.} = enum
-    Vertical, Horizontal,
-  Border* {.pure.} = enum
-    None, Single, Double, Hidden,
-  Box* = ref object of nimwave.Component
-    direction*: Direction
-    border*: Border
-    children*: seq[nimwave.Component]
-
-method render*(node: Box, ctx: var nimwave.Context[State]) =
+method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
   procCall render(nimwave.Component(node), ctx)
   var
     xStart = 0
     yStart = 0
   case node.border:
-  of None:
+  of nimwave.Border.None:
     discard
-  of Single, Double, Hidden:
+  of nimwave.Border.Single, nimwave.Border.Double, nimwave.Border.Hidden:
     xStart = 1
     yStart = 1
   if node.children.len > 0:
     case node.direction:
-    of Horizontal:
+    of nimwave.Direction.Horizontal:
       var
         x = xStart
         remainingWidth = iw.width(ctx.tb).int
@@ -87,7 +77,7 @@ method render*(node: Box, ctx: var nimwave.Context[State]) =
         remainingChildren -= 1
         maxHeight = max(maxHeight, iw.height(childContext.tb)+(yStart*2))
       ctx = nimwave.slice(ctx, 0, 0, x+xStart, maxHeight)
-    of Vertical:
+    of nimwave.Direction.Vertical:
       var
         y = yStart
         remainingHeight = iw.height(ctx.tb).int
@@ -104,26 +94,16 @@ method render*(node: Box, ctx: var nimwave.Context[State]) =
         maxWidth = max(maxWidth, iw.width(childContext.tb)+(xStart*2))
       ctx = nimwave.slice(ctx, 0, 0, maxWidth, y+yStart)
   case node.border:
-  of Single:
+  of nimwave.Border.Single:
     iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1)
-  of Double:
+  of nimwave.Border.Double:
     iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
   else:
     discard
 
 # scroll
 
-type
-  Scroll* = ref object of nimwave.Component
-    scrollX*: int
-    scrollY*: int
-    changeScrollX*: int
-    changeScrollY*: int
-    growX*: bool
-    growY*: bool
-    child*: nimwave.Component
-
-method render*(node: Scroll, ctx: var nimwave.Context[State]) =
+method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
   procCall render(nimwave.Component(node), ctx)
   let mnode = getMounted(node, ctx)
   let
@@ -159,29 +139,13 @@ method render*(node: Scroll, ctx: var nimwave.Context[State]) =
 
 # text
 
-type
-  TextKind* {.pure.} = enum
-    Read,
-    Edit,
-  Text* = ref object of nimwave.Component
-    text*: string
-    case kind*: TextKind
-    of Read:
-      discard
-    of Edit:
-      enabled*: bool
-      cursorX*: int
-      key*: iw.Key
-      chars*: seq[Rune]
-      scroll*: Scroll
-
-method render*(node: Text, ctx: var nimwave.Context[State]) =
+method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
   procCall render(nimwave.Component(node), ctx)
   case node.kind:
-  of Read:
+  of nimwave.TextKind.Read:
     ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.text).runeLen, 1)
     tui.write(ctx.tb, 0, 0, node.text)
-  of Edit:
+  of nimwave.TextKind.Edit:
     let mnode = getMounted(node, ctx)
     if node.enabled:
       case node.key:
@@ -222,8 +186,8 @@ method render*(node: Text, ctx: var nimwave.Context[State]) =
         mnode.cursorX += 1
     # create scroll component if it doesn't exist
     if mnode.scroll == nil:
-      mnode.scroll = Scroll(id: "text-scroll")
-    mnode.scroll.child = Text(text: mnode.text)
+      mnode.scroll = nimwave.Scroll(id: "text-scroll")
+    mnode.scroll.child = nimwave.Text(text: mnode.text)
     # update scroll position
     let cursorXDiff = mnode.scroll.scrollX + mnode.cursorX
     if cursorXDiff >= iw.width(ctx.tb) - 1:
