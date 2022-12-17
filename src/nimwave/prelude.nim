@@ -141,6 +141,8 @@ method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
     tui.write(ctx.tb, 0, 0, node.text)
   of nimwave.TextKind.Edit:
     let mnode = getMounted(node, ctx)
+    if mnode.cursorX > mnode.text.runeLen:
+      mnode.cursorX = mnode.text.runeLen
     if node.enabled:
       case node.key:
       of iw.Key.Backspace:
