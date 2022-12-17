@@ -1,10 +1,11 @@
 from nimwave import nil
 from sequtils import nil
 from ansiutils/codes import nil
-from tables import nil
+from tables import `[]`, `[]=`, keys, del
 from sets import nil
 from nimwave/tui import nil
-from illwave as iw import nil
+from illwave as iw import `[]`, `[]=`, `==`
+from unicode import `$`, runeLen, toRunes
 
 method mount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
   discard

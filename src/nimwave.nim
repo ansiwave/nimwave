@@ -1,7 +1,5 @@
 from illwave as iw import nil
 import tables, sets, unicode
-from nimwave/tui import nil
-from ansiutils/codes import nil
 
 type
   Context*[T] = object

@@ -1,10 +1,8 @@
 from illwave as iw import `[]`, `[]=`, `==`
-from strutils import nil
 import unicode
 from ./tui/kdtree import nil
 from ./tui/termtools/runewidth import nil
 from terminal import nil
-from colors import nil
 from ansiutils/codes import nil
 
 const simpleColors = [
