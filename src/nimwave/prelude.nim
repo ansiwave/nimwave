@@ -32,7 +32,8 @@ proc renderRoot*(node: nimwave.Node, ctx: var nimwave.Context[State]) =
 proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
   if node.id == "":
     raise newException(Exception, "Node has no id")
-  sets.incl(ctx.ids[], node.id)
+  if ctx.ids != nil:
+    sets.incl(ctx.ids[], node.id)
   if not tables.contains(ctx.mountedNodes, node.id):
     mount(node, ctx)
     ctx.mountedNodes[node.id] = node
