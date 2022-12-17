@@ -10,8 +10,7 @@ method mount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks
   discard
 
 method render*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
-  if node.id != "":
-    ctx.idPath.add(node.id)
+  discard
 
 method unmount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
   discard
@@ -22,34 +21,31 @@ proc renderRoot*(node: nimwave.Node, ctx: var nimwave.Context[State]) =
   new ctx.ids
   render(node, ctx)
   # unmount any components that weren't in the tree
-  for idPath in sequtils.toSeq(ctx.mountedNodes[].keys):
-    if not sets.contains(ctx.ids[], idPath):
-      let comp = ctx.mountedNodes[idPath]
+  for id in sequtils.toSeq(ctx.mountedNodes[].keys):
+    if not sets.contains(ctx.ids[], id):
+      let comp = ctx.mountedNodes[id]
       unmount(comp, ctx)
-      ctx.mountedNodes[].del(idPath)
-  # reset id fields
+      ctx.mountedNodes[].del(id)
+  # reset ids
   ctx.ids = nil
-  ctx.idPath = @[]
 
 proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
   if node.id == "":
     raise newException(Exception, "Node has no id")
-  elif ctx.idPath.len == 0 or ctx.idPath[^1] != node.id:
-    raise newException(Exception, "You must call the base method first! You can do it like this:\nprocCall render(nimwave.Node(node), ctx)")
-  if sets.contains(ctx.ids[], ctx.idPath):
-    raise newException(Exception, "id already exists somewhere else in the tree: " & $ctx.idPath)
-  sets.incl(ctx.ids[], ctx.idPath)
-  if not tables.contains(ctx.mountedNodes, ctx.idPath):
+  sets.incl(ctx.ids[], node.id)
+  if not tables.contains(ctx.mountedNodes, node.id):
     mount(node, ctx)
-    ctx.mountedNodes[ctx.idPath] = node
+    ctx.mountedNodes[node.id] = node
     return node
   else:
-    return cast[T](ctx.mountedNodes[ctx.idPath])
+    let mnode = ctx.mountedNodes[node.id]
+    if not(mnode of T):
+      raise newException(Exception, "Node with id '" & node.id & "' is not a " & $T & ". Maybe there are two nodes with the same id?")
+    return cast[T](mnode)
 
 # box
 
 method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Node(node), ctx)
   var
     xStart = 0
     yStart = 0
@@ -104,7 +100,6 @@ method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
 # scroll
 
 method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Node(node), ctx)
   let mnode = getMounted(node, ctx)
   let
     width = iw.width(ctx.tb)
@@ -140,7 +135,6 @@ method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
 # text
 
 method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
-  procCall render(nimwave.Node(node), ctx)
   case node.kind:
   of nimwave.TextKind.Read:
     ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.text).runeLen, 1)
@@ -184,21 +178,20 @@ method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
           after = line[mnode.cursorX ..< line.len]
         mnode.text = $before & $ch & $after
         mnode.cursorX += 1
-    # create scroll component if it doesn't exist
-    if mnode.scroll == nil:
-      mnode.scroll = nimwave.Scroll(id: "text-scroll")
-    mnode.scroll.child = nimwave.Text(text: mnode.text)
+    # get scroll component
+    let scroll = getMounted(nimwave.Scroll(id: node.id & "/scroll"), ctx)
+    scroll.child = nimwave.Text(text: mnode.text)
     # update scroll position
-    let cursorXDiff = mnode.scroll.scrollX + mnode.cursorX
+    let cursorXDiff = scroll.scrollX + mnode.cursorX
     if cursorXDiff >= iw.width(ctx.tb) - 1:
-      mnode.scroll.scrollX = iw.width(ctx.tb) - 1 - mnode.cursorX
+      scroll.scrollX = iw.width(ctx.tb) - 1 - mnode.cursorX
     elif cursorXDiff < 0:
-      mnode.scroll.scrollX = 0 - mnode.cursorX
+      scroll.scrollX = 0 - mnode.cursorX
     # render
     ctx = nimwave.slice(ctx, 0, 0, iw.width(ctx.tb), 1)
-    render(mnode.scroll, ctx)
+    render(scroll, ctx)
     if node.enabled:
-      var cell = ctx.tb[mnode.scroll.scrollX + mnode.cursorX, 0]
+      var cell = ctx.tb[scroll.scrollX + mnode.cursorX, 0]
       cell.bg = iw.bgYellow
       cell.fg = iw.fgBlack
-      ctx.tb[mnode.scroll.scrollX + mnode.cursorX, 0] = cell
+      ctx.tb[scroll.scrollX + mnode.cursorX, 0] = cell

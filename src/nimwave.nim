@@ -6,9 +6,8 @@ from ansiutils/codes import nil
 type
   Context*[T] = object
     tb*: iw.TerminalBuffer
-    ids*: ref HashSet[seq[string]]
-    idPath*: seq[string]
-    mountedNodes*: ref Table[seq[string], Node]
+    ids*: ref HashSet[string]
+    mountedNodes*: ref Table[string, Node]
     data*: T
   Node* = ref object of RootObj
     id*: string
@@ -41,7 +40,6 @@ type
       cursorX*: int
       key*: iw.Key
       chars*: seq[Rune]
-      scroll*: Scroll
 
 proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural): Context[T] =
   result = ctx
