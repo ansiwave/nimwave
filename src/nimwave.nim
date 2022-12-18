@@ -52,6 +52,11 @@ proc toSeq(nodes: tuple): seq[Node] =
   for node in nodes.fields:
     when node is tuple:
       result.add(toSeq(node))
+    elif node is string:
+      result.add(nw.Text(text: node))
+    elif node is seq[string]:
+      for s in node:
+        result.add(nw.Text(text: s))
     else:
       result.add(node)
 
