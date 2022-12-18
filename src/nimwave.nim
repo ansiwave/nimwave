@@ -60,13 +60,12 @@ proc toSeq(nodes: tuple): seq[Node] =
     else:
       result.add(node)
 
-macro varargsToTuple(args: varargs[untyped]): untyped =
-  result = newTree(nnkTupleConstr)
+macro seq*(args: varargs[untyped]): untyped =
+  var tup = newTree(nnkTupleConstr)
   for arg in args:
-    result.add(arg)
-
-template seq*(nodes: varargs[untyped]): seq[Node] =
-  toSeq(varargsToTuple(nodes))
+    tup.add(arg)
+  quote:
+    toSeq(`tup`)
 
 proc initContext*[T](): Context[T] =
   result = Context[T]()
