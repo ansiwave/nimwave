@@ -139,52 +139,52 @@ method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
 method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
   case node.kind:
   of nimwave.TextKind.Read:
-    ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.text).runeLen, 1)
-    tui.write(ctx.tb, 0, 0, node.text)
+    ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.str).runeLen, 1)
+    tui.write(ctx.tb, 0, 0, node.str)
   of nimwave.TextKind.Edit:
     let mnode = getMounted(node, ctx)
-    if mnode.cursorX > mnode.text.runeLen:
-      mnode.cursorX = mnode.text.runeLen
+    if mnode.cursorX > mnode.str.runeLen:
+      mnode.cursorX = mnode.str.runeLen
     if node.enabled:
       case node.key:
       of iw.Key.Backspace:
         if mnode.cursorX > 0:
           let
-            line = mnode.text.toRunes
+            line = mnode.str.toRunes
             x = mnode.cursorX - 1
             newLine = $line[0 ..< x] & $line[x + 1 ..< line.len]
-          mnode.text = newLine
+          mnode.str = newLine
           mnode.cursorX -= 1
       of iw.Key.Delete:
-        if mnode.cursorX < mnode.text.runeLen:
+        if mnode.cursorX < mnode.str.runeLen:
           let
-            line = mnode.text.toRunes
+            line = mnode.str.toRunes
             newLine = $line[0 ..< mnode.cursorX] & $line[mnode.cursorX + 1 ..< line.len]
-          mnode.text = newLine
+          mnode.str = newLine
       of iw.Key.Left:
         mnode.cursorX -= 1
         if mnode.cursorX < 0:
           mnode.cursorX = 0
       of iw.Key.Right:
         mnode.cursorX += 1
-        if mnode.cursorX > mnode.text.runeLen:
-          mnode.cursorX = mnode.text.runeLen
+        if mnode.cursorX > mnode.str.runeLen:
+          mnode.cursorX = mnode.str.runeLen
       of iw.Key.Home:
         mnode.cursorX = 0
       of iw.Key.End:
-        mnode.cursorX = mnode.text.runeLen
+        mnode.cursorX = mnode.str.runeLen
       else:
         discard
       for ch in node.chars:
         let
-          line = mnode.text.toRunes
+          line = mnode.str.toRunes
           before = line[0 ..< mnode.cursorX]
           after = line[mnode.cursorX ..< line.len]
-        mnode.text = $before & $ch & $after
+        mnode.str = $before & $ch & $after
         mnode.cursorX += 1
     # get scroll component
     let scroll = getMounted(nimwave.Scroll(id: node.id & "/scroll"), ctx)
-    scroll.child = nimwave.Text(text: mnode.text)
+    scroll.child = nimwave.Text(str: mnode.str)
     # update scroll position
     let cursorXDiff = scroll.scrollX + mnode.cursorX
     if cursorXDiff >= iw.width(ctx.tb) - 1:

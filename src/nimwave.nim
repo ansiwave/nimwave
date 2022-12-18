@@ -30,7 +30,7 @@ type
     Read,
     Edit,
   Text* = ref object of Node
-    text*: string
+    str*: string
     case kind*: TextKind
     of Read:
       discard
@@ -53,10 +53,10 @@ proc toSeq(nodes: tuple): seq[Node] =
     when node is tuple:
       result.add(toSeq(node))
     elif node is string:
-      result.add(nw.Text(text: node))
+      result.add(nw.Text(str: node))
     elif node is seq[string]:
       for s in node:
-        result.add(nw.Text(text: s))
+        result.add(nw.Text(str: s))
     else:
       result.add(node)
 
