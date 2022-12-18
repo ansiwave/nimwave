@@ -47,9 +47,15 @@ proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple
   result = ctx
   result.tb = iw.slice(ctx.tb, x, y, width, height, bounds)
 
-proc all*(comps: varargs[Node]): seq[Node] =
-  for comp in comps:
-    result.add(comp)
+proc toSeq(nodes: tuple): seq[Node] =
+  for node in nodes.fields:
+    result.add(node)
+
+proc toSeq(node: Node): seq[Node] =
+  result.add(node)
+
+template seq*(nodes: varargs[untyped]): seq[Node] =
+  toSeq((nodes))
 
 proc initContext*[T](): Context[T] =
   result = Context[T]()
