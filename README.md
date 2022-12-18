@@ -12,59 +12,66 @@ For a much more involved example project, see [ANSIWAVE BBS](https://github.com/
 
 ## Documentation
 
-NIMWAVE provides a convenient way to define your UI using Nim's `json` module. Here's a simple example that renders a few lines of text surrounded by a box:
+NIMWAVE provides a way to build your UI with a hierarchy of nodes. Here's an example that renders a few lines of text:
 
 ```nim
-nimwave.render(ctx, %* {
-  "type": "nimwave.vbox",
-  "border": "single",
-  "children": [
-    "Hello, world!",
-    "Nim rocks",
-  ],
-})
+render(
+  nw.Box(
+    direction: nw.Direction.Vertical,
+    border: nw.Border.Single,
+    children: nw.seq(
+      "Hello, world!",
+      "Nim rocks",
+    ),
+  ),
+  ctx
+)
 ```
 
-### Custom components
+### Custom nodes
 
-The `nimwave.vbox` is a built-in component. You can easily define your own components as well. For example, let's move that into a custom component:
+The `nw.Box` is a built-in node. You can easily define your own nodes as well. For example, let's move that into a custom node:
 
 ```nim
-proc renderLines(ctx: var nimwave.Context[State], node: JsonNode) =
-  nimwave.render(ctx, %* {
-    "type": "nimwave.vbox",
-    "border": "single",
-    "children": node["text"],
-  })
+type
+  MyCustomNode = ref object of nw.Node
+    lines: seq[string]
 
-ctx.components["lines"] = renderLines
-
-nimwave.render(ctx, %* {
-  "type": "lines",
-  "text": [
-    "Hello, world!",
-    "Nim rocks",
-  ],
-})
+method render*(node: MyCustomNode, ctx: var nw.Context[State]) =
+  render(
+    nw.Box(
+      direction: nw.Direction.Vertical,
+      border: nw.Border.Single,
+      children: nw.seq(node.lines),
+    ),
+    ctx
+  )
 ```
 
-This is a somewhat pointless example since we're just wrapping the vbox in a component, but you get the idea. All you need to do is make a proc with the right signature, add it to `ctx.components`, and immediately start using it.
-
-### Resizing components
-
-By default, a component will receive a size from its parent component. This size can be found from `iw.width(ctx.tb)` and `iw.height(ctx.tb)`. Any component can change its own size using `nimwave.slice` like this:
+Now it can be rendered like this:
 
 ```nim
-proc renderLines(ctx: var nimwave.Context[State], node: JsonNode) =
-  ctx = nimwave.slice(ctx, 0, 0, iw.width(ctx.tb), node["text"].elems.len+2)
-  nimwave.render(ctx, %* {
-    "type": "nimwave.vbox",
-    "border": "single",
-    "children": node["text"],
-  })
+render(MyCustomNode(lines: @["Hello, world!", "Nim rocks"]), ctx)
 ```
 
-Here, the component is retaining the width given to it by the parent, but it is resizing its height to be the number of lines of text plus 2 (for the border).
+### Resizing nodes
+
+By default, a node will receive a size from its parent node. This size can be found from `iw.width(ctx.tb)` and `iw.height(ctx.tb)`. Any node can change its own size using `nw.slice` like this:
+
+```nim
+method render*(node: MyCustomNode, ctx: var nw.Context[State]) =
+  ctx = nw.slice(ctx, 0, 0, iw.width(ctx.tb), node.lines.len+2)
+  render(
+    nw.Box(
+      direction: nw.Direction.Vertical,
+      border: nw.Border.Single,
+      children: nw.seq(node.lines),
+    ),
+    ctx
+  )
+```
+
+Here, the node is retaining the width given to it by the parent, but it is resizing its height to be the number of lines of text plus 2 (for the border).
 
 ### Adding styling
 
@@ -79,99 +86,84 @@ ctx.tb[0, 0].bg = iw.bgYellow
 ctx.tb[0, 0].ch = "Z".toRunes[0]
 ```
 
-The coordinates here are relative, so `0, 0` will be the top left corner of the component you are in, not the top left corner of the entire terminal.
+The coordinates here are relative, so `0, 0` will be the top left corner of the node you are in, not the top left corner of the entire terminal.
 
-Also, all strings passed to `nimwave.render` may include ANSI escape codes directly:
-
-```nim
-nimwave.render(ctx, %* {
-  "type": "nimwave.hbox",
-  "children": ["\e[32;43mHello, world!\e[0m"],
-})
-```
-
-### Stateful components
-
-Some components require local state. For example, let's make a button that increments a number every time it is clicked. Although not ideal, an easy way we could do this is with global state:
+Also, strings may include ANSI escape codes directly:
 
 ```nim
-var count = 0
-
-proc renderCounter(ctx: var nimwave.Context[State], node: JsonNode) =
-  ctx = nimwave.slice(ctx, 0, 0, 15, 3)
-
-  proc renderCountBtn(ctx: var nimwave.Context[State], node: JsonNode) =
-    const text = "Count"
-    ctx = nimwave.slice(ctx, 0, 0, text.runeLen+2, iw.height(ctx.tb))
-    if (mouse.action == iw.MouseButtonAction.mbaPressed and iw.contains(ctx.tb, mouse)) or key == iw.Key.Enter:
-      count += 1
-    nimwave.render(ctx, %* {
-      "type": "nimwave.hbox",
-      "border": "single",
-      "children": [text],
-    })
-
-  ctx.components["count-btn"] = renderCountBtn
-
-  nimwave.render(ctx, %* {
-    "type": "nimwave.hbox",
-    "children": [
-      {"type": "nimwave.vbox", "border": "none", "children": [$count]},
-      {"type": "count-btn"},
-    ]
-  })
-
-ctx.components["counter"] = renderCounter
-
-nimwave.render(ctx, %* {"type": "counter"})
+render(nw.Text(str: "\e[32;43mHello, world!\e[0m"), ctx)
 ```
 
-As you can see, new components can be created on the fly from inside other components. Local components like `count-btn` are only usable where they are added; elsewhere in the program, they will not be available.
+### Stateful nodes
 
-While the above component will work, it will not be reusable because the state is global. If we try to render it in two different places, both will use the same count.
-
-NIMWAVE solves this by allowing you to create stateful components, which are functions that return functions:
+Some nodes require local state. For example, let's make a button that increments a number every time it is clicked. First, we'll make a custom node for the button:
 
 ```nim
-proc mountCounter(ctx: var nimwave.Context[State], node: JsonNode): nimwave.RenderProc[State] =
-  var count = 0
-  return
-    proc (ctx: var nimwave.Context[State], node: JsonNode) =
-      ctx = nimwave.slice(ctx, 0, 0, 15, 3)
+type
+  Button = ref object of nw.Node
+    str: string
+    mouse: iw.MouseInfo
+    action: proc ()
 
-      proc renderCountBtn(ctx: var nimwave.Context[State], node: JsonNode) =
-        const text = "Count"
-        ctx = nimwave.slice(ctx, 0, 0, text.runeLen+2, iw.height(ctx.tb))
-        if (mouse.action == iw.MouseButtonAction.mbaPressed and iw.contains(ctx.tb, mouse)) or key == iw.Key.Enter:
-          count += 1
-        nimwave.render(ctx, %* {
-          "type": "nimwave.hbox",
-          "border": "single",
-          "children": [text],
-        })
-
-      ctx.components["count-btn"] = renderCountBtn
-
-      nimwave.render(ctx, %* {
-        "type": "nimwave.hbox",
-        "children": [
-          {"type": "nimwave.vbox", "border": "none", "children": [$count]},
-          {"type": "count-btn"},
-        ]
-      })
-
-ctx.statefulComponents["counter"] = mountCounter
-
-nimwave.render(ctx, %* {"type": "counter", "id": "counter"}) # id required!
+method render*(node: Button, ctx: var nw.Context[State]) =
+  ctx = nw.slice(ctx, 0, 0, node.str.runeLen+2, iw.height(ctx.tb))
+  if node.mouse.action == iw.MouseButtonAction.mbaPressed and iw.contains(ctx.tb, node.mouse):
+    node.action()
+  render(
+    nw.Box(
+      direction: nw.Direction.Horizontal,
+      border: nw.Border.Single,
+      children: nw.seq(node.str),
+    ),
+    ctx
+  )
 ```
 
-The outer function runs once when it first mounts in the UI. This is where you can define the local state. It then returns a function which runs every time it renders, and it will have access to that state.
+Next, we make a node that places this button next to a count, and increments the count when the button is clicked:
 
-As you can see from the final line, stateful components require a unique `id` attribute to be included, so NIMWAVE has a stable way to refer to it. This needs to be unique when combined with all ids from parent components, so if one of its parents has an id of `main-page`, the full internal id is `@["main-page", "counter"]`. This makes it easier to avoid id clashes.
+```nim
+type
+  Counter = ref object of nw.Node
+    mouse: iw.MouseInfo
+    count: int
+
+method render*(node: Counter, ctx: var nw.Context[State]) =
+  let mnode = getMounted(node, ctx)
+  ctx = nw.slice(ctx, 0, 0, 15, 3)
+  proc incCount() =
+    mnode.count += 1
+  render(
+    nw.Box(
+      direction: nw.Direction.Horizontal,
+      border: nw.Border.None,
+      children: nw.seq(
+        nw.Box(
+          direction: nw.Direction.Horizontal,
+          border: nw.Border.Hidden,
+          children: nw.seq($mnode.count),
+        ),
+        Button(str: "Count", mouse: node.mouse, action: incCount),
+      ),
+    ),
+    ctx
+  )
+```
+
+For a node to maintain state, it must be "mounted", which just means its reference is stored in the context. When you call `getMounted`, it will look for the mounted version of that node and return it. If it hasn't been mounted yet, it'll do so. If you want to run custom code when a node mounts or unmounts, you can define a `mount` and `unmount` method with the same signature as `render`.
+
+The mounted version, called `mnode` here, is the one you should use to read/write stateful data. Meanwhile, if you want to read any new data that came after mounting, such as the `mouse` data, you should read from the original `node` argument. If you tried reading that from `mnode` it would give you the value that it was when it mounted.
+
+The `Counter` can then be rendered like this:
+
+```nim
+render(Counter(id: "counter", mouse: mouse), ctx)
+```
+
+Note that all mounted nodes *must* have a unique `id`. If the parent node has an id, it is best to combine them together, such as `node.id & "/counter"`, to ensure it will be unique. NIMWAVE tries its best to throw an error if you reuse an id, but it's not always possible to tell, so it is up to you to ensure this.
 
 ### Storing state in the Context
 
-Another place to store state is inside the `Context` object. This object is passed to every component, so this is a nice way to pass state that should be accessible everywhere. The starter project defines it like this:
+Another place to store state is inside the `Context` object. This object is passed to every node, so this is a nice way to pass state that should be accessible everywhere. The starter project defines it like this:
 
 ```nim
 type
@@ -179,17 +171,17 @@ type
     focusIndex*: int
     focusAreas*: ref seq[iw.TerminalBuffer]
 
-var ctx = nimwave.initContext[State]()
+var ctx = nw.initContext[State]()
 ```
 
 This object is completely up to you to define, and it will be accessible to you from `ctx.data`. In this case, it contains state for a simple focus system. The starter project defines this function:
 
 ```nim
-proc addFocusArea(ctx: var nimwave.Context[State]): bool =
+proc addFocusArea(ctx: var nw.Context[State]): bool =
   result = ctx.data.focusIndex == ctx.data.focusAreas[].len
   ctx.data.focusAreas[].add(ctx.tb)
 ```
 
-Inside components that should be focusable, you'll find `let focused = addFocusArea(ctx)` which adds the component's `TerminalBuffer` to the `focusAreas` and returns true if its length equals the `focusIndex`.
+Inside nodes that should be focusable, you'll find `let focused = addFocusArea(ctx)` which adds the node's `TerminalBuffer` to the `focusAreas` and returns true if its length equals the `focusIndex`.
 
-This is just one way to implement a focus system. Notice that this object is using both a value type and a ref type. Always consider what kind of behavior you want; value types will be copied from component to component, so if they are modified from inside a component, the change will only be visible to its own children. Use a ref type if you want all components to see/modify the same data.
+This is just one way to implement a focus system. Notice that this object is using both a value type and a ref type. Always consider what kind of behavior you want; value types will be copied from node to node, so if they are modified from inside a node, the change will only be visible to its own children. Use a ref type if you want all nodes to see/modify the same data.
