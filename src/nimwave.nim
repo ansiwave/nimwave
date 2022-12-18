@@ -1,5 +1,6 @@
 from illwave as iw import nil
 import tables, sets, unicode
+import macros
 
 type
   Context*[T] = object
@@ -49,13 +50,18 @@ proc slice*[T](ctx: Context[T], x, y: int, width, height: Natural, bounds: tuple
 
 proc toSeq(nodes: tuple): seq[Node] =
   for node in nodes.fields:
-    result.add(node)
+    when node is tuple:
+      result.add(toSeq(node))
+    else:
+      result.add(node)
 
-proc toSeq(node: Node): seq[Node] =
-  result.add(node)
+macro varargsToTuple(args: varargs[untyped]): untyped =
+  result = newTree(nnkTupleConstr)
+  for arg in args:
+    result.add(arg)
 
 template seq*(nodes: varargs[untyped]): seq[Node] =
-  toSeq((nodes))
+  toSeq(varargsToTuple(nodes))
 
 proc initContext*[T](): Context[T] =
   result = Context[T]()
