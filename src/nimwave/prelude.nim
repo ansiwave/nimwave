@@ -1,4 +1,4 @@
-from nimwave import nil
+from nimwave as nw import nil
 from sequtils import nil
 from ansiutils/codes import nil
 from tables import `[]`, `[]=`, keys, del
@@ -7,16 +7,16 @@ from nimwave/tui import nil
 from illwave as iw import `[]`, `[]=`, `==`
 from unicode import `$`, runeLen, toRunes
 
-method mount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
+method mount*(node: nw.Node, ctx: var nw.Context[State]) {.base, locks: "unknown".} =
   discard
 
-method render*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
+method render*(node: nw.Node, ctx: var nw.Context[State]) {.base, locks: "unknown".} =
   discard
 
-method unmount*(node: nimwave.Node, ctx: var nimwave.Context[State]) {.base, locks: "unknown".} =
+method unmount*(node: nw.Node, ctx: var nw.Context[State]) {.base, locks: "unknown".} =
   discard
 
-proc renderRoot*(node: nimwave.Node, ctx: var nimwave.Context[State]) =
+proc renderRoot*(node: nw.Node, ctx: var nw.Context[State]) =
   if ctx.tb.buf == nil:
     raise newException(Exception, "The `tb` field must be set in the context object")
   new ctx.ids
@@ -30,7 +30,7 @@ proc renderRoot*(node: nimwave.Node, ctx: var nimwave.Context[State]) =
   # reset ids
   ctx.ids = nil
 
-proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
+proc getMounted*[T](node: T, ctx: var nw.Context[State]): T =
   if node.id == "":
     raise newException(Exception, "Node has no id")
   if ctx.ids != nil:
@@ -47,19 +47,19 @@ proc getMounted*[T](node: T, ctx: var nimwave.Context[State]): T =
 
 # box
 
-method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
+method render*(node: nw.Box, ctx: var nw.Context[State]) =
   var
     xStart = 0
     yStart = 0
   case node.border:
-  of nimwave.Border.None:
+  of nw.Border.None:
     discard
-  of nimwave.Border.Single, nimwave.Border.Double, nimwave.Border.Hidden:
+  of nw.Border.Single, nw.Border.Double, nw.Border.Hidden:
     xStart = 1
     yStart = 1
   if node.children.len > 0:
     case node.direction:
-    of nimwave.Direction.Horizontal:
+    of nw.Direction.Horizontal:
       var
         x = xStart
         remainingWidth = iw.width(ctx.tb).int
@@ -67,15 +67,15 @@ method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
         maxHeight = iw.height(ctx.tb)
       for child in node.children:
         let initialWidth = int(remainingWidth / remainingChildren)
-        var childContext = nimwave.slice(ctx, x, yStart, max(0, initialWidth - (xStart * 2)), max(0, iw.height(ctx.tb) - (yStart * 2)))
+        var childContext = nw.slice(ctx, x, yStart, max(0, initialWidth - (xStart * 2)), max(0, iw.height(ctx.tb) - (yStart * 2)))
         render(child, childContext)
         let actualWidth = iw.width(childContext.tb)
         x += actualWidth
         remainingWidth -= actualWidth
         remainingChildren -= 1
         maxHeight = max(maxHeight, iw.height(childContext.tb)+(yStart*2))
-      ctx = nimwave.slice(ctx, 0, 0, x+xStart, maxHeight)
-    of nimwave.Direction.Vertical:
+      ctx = nw.slice(ctx, 0, 0, x+xStart, maxHeight)
+    of nw.Direction.Vertical:
       var
         y = yStart
         remainingHeight = iw.height(ctx.tb).int
@@ -83,25 +83,25 @@ method render*(node: nimwave.Box, ctx: var nimwave.Context[State]) =
         maxWidth = iw.width(ctx.tb)
       for child in node.children:
         let initialHeight = int(remainingHeight / remainingChildren)
-        var childContext = nimwave.slice(ctx, xStart, y, max(0, iw.width(ctx.tb) - (xStart * 2)), max(0, initialHeight - (yStart * 2)))
+        var childContext = nw.slice(ctx, xStart, y, max(0, iw.width(ctx.tb) - (xStart * 2)), max(0, initialHeight - (yStart * 2)))
         render(child, childContext)
         let actualHeight = iw.height(childContext.tb)
         y += actualHeight
         remainingHeight -= actualHeight
         remainingChildren -= 1
         maxWidth = max(maxWidth, iw.width(childContext.tb)+(xStart*2))
-      ctx = nimwave.slice(ctx, 0, 0, maxWidth, y+yStart)
+      ctx = nw.slice(ctx, 0, 0, maxWidth, y+yStart)
   case node.border:
-  of nimwave.Border.Single:
+  of nw.Border.Single:
     iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1)
-  of nimwave.Border.Double:
+  of nw.Border.Double:
     iw.drawRect(ctx.tb, 0, 0, iw.width(ctx.tb)-1, iw.height(ctx.tb)-1, doubleStyle = true)
   else:
     discard
 
 # scroll
 
-method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
+method render*(node: nw.Scroll, ctx: var nw.Context[State]) =
   let mnode = getMounted(node, ctx)
   let
     width = iw.width(ctx.tb)
@@ -117,7 +117,7 @@ method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
       else:
         height
     bounds = (0, 0, boundsWidth, boundsHeight)
-  var ctx = nimwave.slice(ctx, mnode.scrollX, mnode.scrollY, width, height, bounds)
+  var ctx = nw.slice(ctx, mnode.scrollX, mnode.scrollY, width, height, bounds)
   render(node.child, ctx)
   if node.changeScrollX != 0:
     mnode.scrollX += node.changeScrollX
@@ -136,12 +136,12 @@ method render*(node: nimwave.Scroll, ctx: var nimwave.Context[State]) =
 
 # text
 
-method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
+method render*(node: nw.Text, ctx: var nw.Context[State]) =
   case node.kind:
-  of nimwave.TextKind.Read:
-    ctx = nimwave.slice(ctx, 0, 0, codes.stripCodes(node.str).runeLen, 1)
+  of nw.TextKind.Read:
+    ctx = nw.slice(ctx, 0, 0, codes.stripCodes(node.str).runeLen, 1)
     tui.write(ctx.tb, 0, 0, node.str)
-  of nimwave.TextKind.Edit:
+  of nw.TextKind.Edit:
     let mnode = getMounted(node, ctx)
     if mnode.cursorX > mnode.str.runeLen:
       mnode.cursorX = mnode.str.runeLen
@@ -183,8 +183,8 @@ method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
         mnode.str = $before & $ch & $after
         mnode.cursorX += 1
     # get scroll component
-    let scroll = getMounted(nimwave.Scroll(id: node.id & "/scroll"), ctx)
-    scroll.child = nimwave.Text(str: mnode.str)
+    let scroll = getMounted(nw.Scroll(id: node.id & "/scroll"), ctx)
+    scroll.child = nw.Text(str: mnode.str)
     # update scroll position
     let cursorXDiff = scroll.scrollX + mnode.cursorX
     if cursorXDiff >= iw.width(ctx.tb) - 1:
@@ -192,7 +192,7 @@ method render*(node: nimwave.Text, ctx: var nimwave.Context[State]) =
     elif cursorXDiff < 0:
       scroll.scrollX = 0 - mnode.cursorX
     # render
-    ctx = nimwave.slice(ctx, 0, 0, iw.width(ctx.tb), 1)
+    ctx = nw.slice(ctx, 0, 0, iw.width(ctx.tb), 1)
     render(scroll, ctx)
     if node.enabled:
       var cell = ctx.tb[scroll.scrollX + mnode.cursorX, 0]
