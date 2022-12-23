@@ -160,6 +160,19 @@ proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options
         opts.doubleWidthStyle
       else:
         opts.normalWidthStyle
+    allStyles =
+      block:
+        var styles: seq[string]
+        if fg != "":
+          styles.add(fg)
+        if bg != "":
+          styles.add(bg)
+        if additionalStyles != "":
+          styles.add(additionalStyles)
+        if styles.len > 0:
+          " style='" & strutils.join(styles, " ") & "'"
+        else:
+          ""
     mouseEvents =
       if position != (-1, -1):
         var attrs: seq[string]
@@ -169,10 +182,13 @@ proc toHtml*(ch: iw.TerminalChar, position: tuple[x: int, y: int], opts: Options
           attrs.add("onmouseup='$1($2, $3)'".format(opts.mouseUpFn, position.x, position.y))
         if opts.mouseMoveFn != "":
           attrs.add("onmousemove='$1($2, $3)'".format(opts.mouseMoveFn, position.x, position.y))
-        strutils.join(attrs, " ")
+        if attrs.len > 0:
+          " " & strutils.join(attrs, " ")
+        else:
+          ""
       else:
         ""
-  return "<span class='col$1' style='$2 $3 $4' $5>$6</span>".format(position.x, fg, bg, additionalStyles, mouseEvents, $ch.ch)
+  return "<span class='col$1'$2$3>$4</span>".format(position.x, allStyles, mouseEvents, $ch.ch)
 
 proc toHtml*(tb: iw.TerminalBuffer, opts: Options): string =
   let
