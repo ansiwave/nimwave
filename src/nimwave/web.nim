@@ -2,7 +2,6 @@ from illwave as iw import `[]`, `[]=`, `==`
 from strutils import format
 import tables, unicode, json
 from terminal import nil
-from ./web/emscripten import nil
 from ./tui/termtools/runewidth import nil
 
 type
@@ -219,12 +218,15 @@ proc diff(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, opts: Options, limit
         actions.add(Action(kind: Update, html: html, x: x, y: y))
   true
 
-proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, selector: string, opts: Options) =
-  if prevTb.buf == nil:
-    emscripten.setInnerHtml(selector, toHtml(tb, opts))
-  elif prevTb != tb:
-    var actions: seq[Action]
-    # if the diff is too big, just replace it all because it'll be faster
-    if not diff(tb, prevTb, opts, 300, actions) or not emscripten.updateGrid(selector, $ (% actions)):
+when defined(emscripten):
+  from ./web/emscripten import nil
+
+  proc display*(tb: iw.TerminalBuffer, prevTb: iw.TerminalBuffer, selector: string, opts: Options) =
+    if prevTb.buf == nil:
       emscripten.setInnerHtml(selector, toHtml(tb, opts))
+    elif prevTb != tb:
+      var actions: seq[Action]
+      # if the diff is too big, just replace it all because it'll be faster
+      if not diff(tb, prevTb, opts, 300, actions) or not emscripten.updateGrid(selector, $ (% actions)):
+        emscripten.setInnerHtml(selector, toHtml(tb, opts))
 
