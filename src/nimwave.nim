@@ -53,10 +53,10 @@ proc toSeq(nodes: tuple): seq[Node] =
     when node is tuple:
       result.add(toSeq(node))
     elif node is string:
-      result.add(nw.Text(str: node))
+      result.add(Text(str: node))
     elif node is seq[string]:
       for s in node:
-        result.add(nw.Text(str: s))
+        result.add(Text(str: s))
     else:
       result.add(node)
 
