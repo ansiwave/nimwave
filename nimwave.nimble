@@ -1,6 +1,6 @@
 # Package
 
-version       = "1.2.0"
+version       = "1.2.1"
 author        = "oakes"
 description   = "A TUI -> GUI library"
 license       = "Public Domain"
