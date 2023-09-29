@@ -78,12 +78,13 @@ Here, the node is retaining the width given to it by the parent, but it is resiz
 All low level render operations are dona via [illwave](https://github.com/ansiwave/illwave). You can manipulate individual cells in the `TerminalBuffer` like this:
 
 ```nim
+var cell = ctx.tb[0, 0]
 # change the foreground/background color
-ctx.tb[0, 0].fg = iw.fgBlue
-ctx.tb[0, 0].bg = iw.bgYellow
-
+cell.fg = iw.fgBlue
+cell.bg = iw.bgYellow
 # change the character
-ctx.tb[0, 0].ch = "Z".toRunes[0]
+cell.ch = "Z".toRunes[0]
+ctx.tb[0, 0] = cell
 ```
 
 The coordinates here are relative, so `0, 0` will be the top left corner of the node you are in, not the top left corner of the entire terminal.
